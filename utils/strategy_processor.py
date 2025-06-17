@@ -219,7 +219,7 @@ Generate the `conditions` JSON:"""
             
             # Apply delay if specified
             if delay_days > 0:
-                signals = signals.shift(delay_days).fillna(False)
+                signals = signals.shift(delay_days).fillna(False).infer_objects(copy=False)
             
             # Execute strategy with holding period
             pos, days, returns = 0, 0, []
