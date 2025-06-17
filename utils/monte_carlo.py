@@ -325,9 +325,9 @@ class MonteCarloSimulator:
         # Calculate correlation matrix
         correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
         
-        # Generate correlated paths for all variables
+        # Generate correlated paths for all variables with consistent market condition
         simulated_paths = data_fetcher.simulate_multi_factor_series(
-            historical_data, n_simulations, simulation_days, correlation_matrix
+            historical_data, n_simulations, simulation_days, correlation_matrix, market_condition
         )
         
         # Calculate strategy performance for each simulation

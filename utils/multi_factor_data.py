@@ -447,7 +447,7 @@ Respond with JSON:
         
         return correlation_matrix
     
-    def simulate_multi_factor_series(self, historical_data, n_simulations, simulation_days, correlation_matrix=None):
+    def simulate_multi_factor_series(self, historical_data, n_simulations, simulation_days, correlation_matrix=None, market_condition=None):
         """
         Generate correlated synthetic paths for multiple variables using Cholesky decomposition
         
@@ -456,6 +456,7 @@ Respond with JSON:
             n_simulations: Number of simulation paths
             simulation_days: Number of days to simulate
             correlation_matrix: Pre-calculated correlation matrix (optional)
+            market_condition: Market condition to apply consistent adjustments across all variables
             
         Returns:
             dict: Dictionary of simulated paths for each variable
@@ -471,6 +472,22 @@ Respond with JSON:
         # Calculate mean returns and volatilities
         mean_returns = returns.mean().values
         volatilities = returns.std().values
+        
+        # Apply market condition adjustments consistently across all variables
+        if market_condition is not None:
+            from .market_conditions import adjust_mu_sigma_for_condition
+            print(f"Applying market condition: {market_condition.value}")
+            
+            adjusted_params = []
+            for i, var in enumerate(variables):
+                mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(
+                    mean_returns[i], volatilities[i], market_condition
+                )
+                adjusted_params.append((mu_adjusted, sigma_adjusted))
+                print(f"  {var}: μ {mean_returns[i]:.4f} -> {mu_adjusted:.4f}, σ {volatilities[i]:.4f} -> {sigma_adjusted:.4f}")
+            
+            mean_returns = np.array([p[0] for p in adjusted_params])
+            volatilities = np.array([p[1] for p in adjusted_params])
         
         # Use provided correlation matrix or calculate from data
         if correlation_matrix is None:
