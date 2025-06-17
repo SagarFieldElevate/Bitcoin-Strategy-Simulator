@@ -83,9 +83,10 @@ risk_percent = st.sidebar.slider(
 # Initialize Pinecone client
 @st.cache_resource
 def init_pinecone():
-    api_key = os.getenv("PINECONE_API_KEY", "")
+    # Check multiple sources for the API key
+    api_key = os.getenv("PINECONE_API_KEY") or st.secrets.get("PINECONE_API_KEY", "")
     if not api_key:
-        st.error("Pinecone API key not found in environment variables")
+        st.error("Pinecone API key not found in environment variables or secrets")
         return None
     return PineconeClient(api_key)
 
