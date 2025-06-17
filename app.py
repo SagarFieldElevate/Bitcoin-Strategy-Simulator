@@ -11,6 +11,7 @@ from utils.bitcoin_data import fetch_bitcoin_data
 from utils.monte_carlo import MonteCarloSimulator
 from utils.pinecone_client import PineconeClient
 from utils.visualization import create_fan_chart, create_terminal_price_histogram, create_cagr_distribution
+from utils.market_conditions import MarketCondition, get_condition_description
 
 # Page configuration
 st.set_page_config(
@@ -99,33 +100,56 @@ simulation_days = st.sidebar.slider(
     help="Number of days to simulate forward"
 )
 
-# Strategy parameters
-st.sidebar.header("Strategy Parameters")
-spread_threshold = st.sidebar.slider(
-    "Spread Threshold",
-    min_value=1.0,
-    max_value=5.0,
-    value=2.0,
-    step=0.1,
-    help="Divergence threshold for signal generation"
+# Market Condition Selection
+st.sidebar.header("Market Scenario")
+market_condition_options = [
+    ("Baseline (Historical)", None),
+    ("High Volatility Bull", MarketCondition.HIGH_VOL_UP),
+    ("High Volatility Bear (Crash)", MarketCondition.HIGH_VOL_DOWN),
+    ("High Volatility Sideways", MarketCondition.HIGH_VOL_STABLE),
+    ("Stable Volatility Bull", MarketCondition.STABLE_VOL_UP),
+    ("Stable Volatility Bear", MarketCondition.STABLE_VOL_DOWN),
+    ("Stable Volatility Sideways", MarketCondition.STABLE_VOL_STABLE)
+]
+
+selected_condition_name = st.sidebar.selectbox(
+    "Market Condition",
+    options=[name for name, _ in market_condition_options],
+    help="Select market scenario to simulate"
 )
 
-holding_period = st.sidebar.slider(
-    "Holding Period (Days)",
-    min_value=1,
-    max_value=10,
-    value=5,
-    help="Maximum days to hold a position"
+# Get the corresponding MarketCondition enum
+selected_market_condition = next(
+    (condition for name, condition in market_condition_options if name == selected_condition_name),
+    None
 )
 
-risk_percent = st.sidebar.slider(
-    "Risk Per Trade (%)",
-    min_value=10.0,
-    max_value=200.0,
-    value=100.0,
-    step=10.0,
-    help="Percentage of capital risked per trade"
-)
+# Show description of selected market condition
+if selected_market_condition:
+    st.sidebar.info(get_condition_description(selected_market_condition))
+    
+    # Display market condition effects
+    st.sidebar.subheader("Market Scenario Effects")
+    if selected_market_condition == MarketCondition.HIGH_VOL_UP:
+        st.sidebar.write("• Drift: +50% bias")
+        st.sidebar.write("• Volatility: +75%")
+    elif selected_market_condition == MarketCondition.HIGH_VOL_DOWN:
+        st.sidebar.write("• Drift: -150% (crash)")
+        st.sidebar.write("• Volatility: +75%")
+    elif selected_market_condition == MarketCondition.HIGH_VOL_STABLE:
+        st.sidebar.write("• Drift: No bias")
+        st.sidebar.write("• Volatility: +50%")
+    elif selected_market_condition == MarketCondition.STABLE_VOL_UP:
+        st.sidebar.write("• Drift: +25% bias")
+        st.sidebar.write("• Volatility: -50%")
+    elif selected_market_condition == MarketCondition.STABLE_VOL_DOWN:
+        st.sidebar.write("• Drift: -125% bias")
+        st.sidebar.write("• Volatility: -50%")
+    elif selected_market_condition == MarketCondition.STABLE_VOL_STABLE:
+        st.sidebar.write("• Drift: No bias")
+        st.sidebar.write("• Volatility: -50%")
+else:
+    st.sidebar.write("Using historical Bitcoin drift and volatility patterns")
 
 
 
@@ -229,20 +253,16 @@ if st.session_state.bitcoin_data is not None:
             with st.spinner(f"Running {n_simulations:,} simulations over {simulation_days} days..."):
                 try:
                     # Initialize Monte Carlo simulator
-                    simulator = MonteCarloSimulator(
-                        st.session_state.bitcoin_data,
-                        spread_threshold=spread_threshold,
-                        holding_period=holding_period,
-                        risk_percent=risk_percent
-                    )
+                    simulator = MonteCarloSimulator(st.session_state.bitcoin_data)
                     
-                    # Run simulation
+                    # Run simulation with market condition
                     progress_bar = st.progress(0)
                     
                     results = simulator.run_simulation(
                         n_simulations=n_simulations,
                         simulation_days=simulation_days,
                         selected_strategy=selected_strategy,
+                        market_condition=selected_market_condition,
                         pinecone_client=pinecone_client,
                         progress_callback=lambda p: progress_bar.progress(p)
                     )
