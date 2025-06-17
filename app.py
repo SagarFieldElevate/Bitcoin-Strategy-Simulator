@@ -271,21 +271,63 @@ if pinecone_client:
 else:
     st.sidebar.warning("Pinecone connection required to load strategies")
 
-# Strategy selection dropdown
+# Strategy search and filtering
+st.sidebar.subheader("Strategy Selection")
+
+# Search functionality
+search_term = st.sidebar.text_input(
+    "Search strategies", 
+    placeholder="Keywords (SPY, momentum, etc.)",
+    help="Search through all strategies by keywords"
+)
+
+# Filter strategies based on search
+filtered_strategies = strategies if strategies else []
+if search_term and strategies:
+    filtered_strategies = []
+    search_lower = search_term.lower()
+    for s in strategies:
+        # Search in description and strategy type
+        desc_match = search_lower in s['description'].lower()
+        type_match = search_lower in s.get('metadata', {}).get('strategy_type', '').lower()
+        
+        if desc_match or type_match:
+            filtered_strategies.append(s)
+    
+    if filtered_strategies:
+        st.sidebar.info(f"Found {len(filtered_strategies)} matches")
+    else:
+        st.sidebar.warning("No matches found")
+        filtered_strategies = strategies
+
+# Strategy type filter
+if filtered_strategies:
+    strategy_types = list(set([s.get('metadata', {}).get('strategy_type', 'unknown') for s in filtered_strategies]))
+    strategy_types.sort()
+    
+    selected_type = st.sidebar.selectbox(
+        "Filter by type",
+        ["All Types"] + strategy_types
+    )
+    
+    # Apply type filter
+    if selected_type != "All Types":
+        filtered_strategies = [s for s in filtered_strategies if s.get('metadata', {}).get('strategy_type', 'unknown') == selected_type]
+
+# Create strategy options
 strategy_options = ["Select a strategy..."]
 strategy_lookup = {"Select a strategy...": None}
 
-if strategies:
-    for strategy in strategies:
-        # Use just the description as the display name
+if filtered_strategies:
+    for strategy in filtered_strategies:
         display_name = strategy['description']
         strategy_options.append(display_name)
         strategy_lookup[display_name] = strategy
 
 selected_strategy_name = st.sidebar.selectbox(
-    "Select Strategy",
+    f"Choose from {len(filtered_strategies)} strategies" if filtered_strategies else "No strategies available",
     options=strategy_options,
-    help="Choose a strategy to simulate"
+    help="Select a strategy to view details and run simulation"
 )
 
 # Strategy generation section
@@ -313,29 +355,82 @@ if selected_strategy_name != "Select a strategy...":
 else:
     st.sidebar.info("Please select a strategy to continue")
 
-# Display strategy details if selected (but not the default option)
+# Enhanced strategy details panel
 if (selected_strategy_name != "Select a strategy..." and 
     selected_strategy_name in strategy_lookup and 
     strategy_lookup[selected_strategy_name] is not None):
     
     selected_strategy = strategy_lookup[selected_strategy_name]
-    st.sidebar.subheader("Strategy Details")
-    st.sidebar.write(f"**Description:** {selected_strategy.get('description', 'N/A')}")
-    
-    # Performance metrics from metadata
     metadata = selected_strategy.get('metadata', {})
+    
+    st.sidebar.subheader("Strategy Details")
+    
+    # Strategy type and description
+    strategy_type = metadata.get('strategy_type', 'Unknown')
+    st.sidebar.markdown(f"**Type:** `{strategy_type}`")
+    
+    # Truncated description with expansion option
+    description = selected_strategy.get('description', 'N/A')
+    if len(description) > 100:
+        with st.sidebar.expander("📋 View Full Description"):
+            st.write(description)
+        st.sidebar.write(f"**Brief:** {description[:100]}...")
+    else:
+        st.sidebar.write(f"**Description:** {description}")
+    
+    # Strategy dependencies
+    dependencies = metadata.get('dependencies', [])
+    if dependencies:
+        st.sidebar.markdown(f"**Dependencies:** {', '.join(dependencies)}")
+    
+    # Performance metrics in organized layout
+    st.sidebar.subheader("Historical Performance")
+    
     col_a, col_b = st.sidebar.columns(2)
     with col_a:
-        st.sidebar.metric("Total Return", f"{metadata.get('total_return', 0):.1f}%")
-        st.sidebar.metric("Sharpe Ratio", f"{metadata.get('sharpe_ratio', 0):.2f}")
-    with col_b:
-        st.sidebar.metric("Max Drawdown", f"{metadata.get('max_drawdown', 0):.1f}%")
-        st.sidebar.metric("Success Rate", f"{metadata.get('success_rate', 0):.1%}")
+        total_return = metadata.get('total_return', 0)
+        st.sidebar.metric("Total Return", f"{total_return:.1f}%", 
+                         delta=None if total_return == 0 else ("Profitable" if total_return > 0 else "Loss"))
+        
+        sharpe = metadata.get('sharpe_ratio', 0)
+        st.sidebar.metric("Sharpe Ratio", f"{sharpe:.2f}",
+                         delta=None if sharpe == 0 else ("Good" if sharpe > 1 else "Poor" if sharpe < 0.5 else "Fair"))
     
-    # Show additional strategy info
-    st.sidebar.write(f"**Holding Period:** {metadata.get('avg_holding_days', 'N/A')} days")
-    st.sidebar.write(f"**Total Trades:** {metadata.get('total_trades', 'N/A')}")
-    st.sidebar.write(f"**Quality Score:** {metadata.get('quality_score', 'N/A')}/100")
+    with col_b:
+        max_dd = metadata.get('max_drawdown', 0)
+        st.sidebar.metric("Max Drawdown", f"{abs(max_dd):.1f}%",
+                         delta=None if max_dd == 0 else ("Low Risk" if abs(max_dd) < 10 else "High Risk"))
+        
+        success_rate = metadata.get('success_rate', 0)
+        st.sidebar.metric("Success Rate", f"{success_rate:.1%}",
+                         delta=None if success_rate == 0 else ("High" if success_rate > 0.6 else "Low"))
+    
+    # Additional strategy metrics
+    st.sidebar.subheader("Trading Details")
+    
+    avg_holding = metadata.get('avg_holding_days', 'N/A')
+    total_trades = metadata.get('total_trades', 'N/A')
+    quality_score = metadata.get('quality_score', 'N/A')
+    
+    st.sidebar.write(f"🕒 **Avg Holding:** {avg_holding} days")
+    st.sidebar.write(f"📊 **Total Trades:** {total_trades}")
+    st.sidebar.write(f"⭐ **Quality Score:** {quality_score}/100")
+    
+    # Risk assessment
+    if total_return != 0 and max_dd != 0:
+        risk_level = "Low" if abs(max_dd) < 10 else "Medium" if abs(max_dd) < 20 else "High"
+        risk_color = "🟢" if risk_level == "Low" else "🟡" if risk_level == "Medium" else "🔴"
+        st.sidebar.write(f"{risk_color} **Risk Level:** {risk_level}")
+    
+    # Simulation readiness indicator
+    st.sidebar.subheader("Simulation Ready")
+    if simulation_mode:
+        mode_display = simulation_mode.replace('_', ' ').title()
+        st.sidebar.success(f"✅ {mode_display} Mode")
+        if simulation_mode == 'multi_factor' and required_variables:
+            st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
+    else:
+        st.sidebar.info("🔄 Ready for analysis")
 
 # Main content area
 col1, col2 = st.columns([2, 1])
@@ -425,20 +520,36 @@ if st.session_state.bitcoin_data is not None:
                 st.session_state.simulation_mode = None
                 st.session_state.required_variables = None
                 
-                with st.spinner("Generating strategy code and running simulation..."):
+                # Enhanced progress tracking
+                progress_container = st.container()
+                
+                with progress_container:
+                    # Create multiple progress indicators
+                    overall_progress = st.progress(0, text="Initializing simulation...")
+                    status_placeholder = st.empty()
+                    
                     try:
-                        # Get strategy data
+                        # Step 1: Strategy Analysis
+                        overall_progress.progress(10, text="Analyzing strategy...")
+                        status_placeholder.info("🔍 Analyzing strategy and detecting dependencies")
+                        
                         selected_strategy_data = strategy_lookup[selected_strategy_name]
                         
                         if not selected_strategy_data:
                             st.error("Could not find strategy data")
                         else:
-                            # Step 1: Generate strategy code
+                            # Step 2: Generate strategy code
+                            overall_progress.progress(20, text="Generating strategy conditions...")
+                            status_placeholder.info("⚙️ Converting strategy to executable conditions")
+                            
                             from utils.strategy_processor import StrategyProcessor
                             processor = StrategyProcessor()
                             processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
                             
-                            # Step 2: Use smart router to determine simulation mode
+                            # Step 3: Smart routing
+                            overall_progress.progress(30, text="Determining simulation mode...")
+                            status_placeholder.info("🧠 Smart routing: selecting optimal simulation engine")
+                            
                             router = SimulationRouter()
                             simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
                             required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
@@ -449,36 +560,64 @@ if st.session_state.bitcoin_data is not None:
                             st.session_state.simulation_mode = simulation_mode
                             st.session_state.required_variables = required_variables
                             
-                            # Step 3: Initialize Monte Carlo simulator with Pinecone client
-                            simulator = MonteCarloSimulator(st.session_state.bitcoin_data, pinecone_client)
-                            
-                            # Step 4: Run simulation with auto-detected mode
-                            progress_bar = st.progress(0)
-                            
+                            # Step 4: Data preparation
+                            overall_progress.progress(40, text="Preparing simulation data...")
                             mode_display = simulation_mode.replace('_', ' ').title() if simulation_mode else "BTC Only"
                             vars_display = ', '.join(required_variables) if required_variables else "BTC"
-                            st.info(f"Running {mode_display} simulation with {vars_display}")
+                            status_placeholder.info(f"📊 Setting up {mode_display} simulation with {vars_display}")
+                            
+                            # Step 5: Initialize simulator
+                            overall_progress.progress(50, text="Initializing Monte Carlo engine...")
+                            status_placeholder.info("🎲 Initializing Monte Carlo simulation engine")
+                            
+                            simulator = MonteCarloSimulator(st.session_state.bitcoin_data, pinecone_client)
+                            
+                            # Step 6: Run simulation with detailed progress
+                            overall_progress.progress(60, text="Running Monte Carlo simulation...")
+                            status_placeholder.info(f"🚀 Running {n_simulations} simulations over {simulation_days} days")
+                            
+                            # Enhanced progress callback with step tracking
+                            def enhanced_progress_callback(progress):
+                                # Map simulation progress to remaining 40% (60-100%)
+                                adjusted_progress = 60 + (progress * 40)
+                                sim_number = int(progress * n_simulations)
+                                overall_progress.progress(adjusted_progress / 100, 
+                                                        text=f"Simulation {sim_number}/{n_simulations} ({progress*100:.1f}%)")
+                                
+                                if progress < 0.5:
+                                    status_placeholder.info(f"🔄 Generating price paths: {sim_number}/{n_simulations}")
+                                else:
+                                    status_placeholder.info(f"📈 Executing strategy logic: {sim_number}/{n_simulations}")
                             
                             results = simulator.run_simulation(
                                 n_simulations=n_simulations,
                                 simulation_days=simulation_days,
                                 selected_strategy=processed_strategy,
                                 market_condition=selected_market_condition,
-                                progress_callback=lambda p: progress_bar.progress(p),
+                                progress_callback=enhanced_progress_callback,
                                 simulation_mode=simulation_mode or 'btc_only',
                                 required_variables=required_variables or ['BTC']
                             )
                             
+                            # Completion
+                            overall_progress.progress(100, text="Simulation completed!")
                             st.session_state.simulation_results = results
+                            
                             completion_mode = results.get('simulation_mode', simulation_mode)
                             completion_display = completion_mode.replace('_', ' ').title() if completion_mode else "BTC Only"
-                            st.success(f"✓ {completion_display} simulation completed!")
                             
-                            # Show simulation mode info
+                            status_placeholder.success(f"✅ {completion_display} simulation completed successfully!")
+                            
+                            # Show simulation summary
                             if results.get('simulation_mode') == 'multi_factor':
                                 used_vars = results.get('variables_used', required_variables)
                                 if used_vars:
-                                    st.info(f"📊 Used variables: {', '.join(used_vars)}")
+                                    st.info(f"📊 Simulated variables: {', '.join(used_vars)}")
+                            
+                            # Brief results preview
+                            median_cagr = results.get('median_cagr', 0)
+                            worst_cagr = results.get('worst_decile_cagr', 0)
+                            st.info(f"📈 Results preview: Median CAGR {median_cagr:.1f}%, Worst 10% CAGR {worst_cagr:.1f}%")
                         
                     except Exception as e:
                         st.error(f"Error running simulation: {str(e)}")
@@ -494,7 +633,64 @@ if st.session_state.bitcoin_data is not None:
 
 # Results visualization
 if st.session_state.simulation_results is not None:
-    st.header("Simulation Results")
+    # Header with export functionality
+    col_header1, col_header2 = st.columns([3, 1])
+    
+    with col_header1:
+        st.header("Simulation Results")
+    
+    with col_header2:
+        # Export functionality
+        if st.button("📊 Export Results", help="Download simulation results as CSV"):
+            results = st.session_state.simulation_results
+            
+            # Create comprehensive results DataFrame
+            export_data = {
+                'Simulation_Number': range(1, len(results['cagr_values']) + 1),
+                'CAGR_Percent': results['cagr_values'],
+                'Max_Drawdown_Percent': results['drawdown_values'],
+                'Final_Price': [path[-1] for path in results['close_paths']],
+                'Strategy': st.session_state.current_strategy_name or 'Unknown',
+                'Simulation_Mode': results.get('simulation_mode', 'btc_only'),
+                'Market_Condition': selected_market_condition.value if selected_market_condition else 'None',
+                'Simulation_Days': simulation_days,
+                'Variables_Used': ', '.join(results.get('variables_used', ['BTC']))
+            }
+            
+            export_df = pd.DataFrame(export_data)
+            
+            # Add summary statistics at the end
+            summary_row = {
+                'Simulation_Number': 'SUMMARY',
+                'CAGR_Percent': f"Median: {results['median_cagr']:.2f}%",
+                'Max_Drawdown_Percent': f"Median: {results['median_max_drawdown']:.2f}%",
+                'Final_Price': f"Range: ${min(export_data['Final_Price']):,.0f} - ${max(export_data['Final_Price']):,.0f}",
+                'Strategy': st.session_state.current_strategy_name or 'Unknown',
+                'Simulation_Mode': results.get('simulation_mode', 'btc_only'),
+                'Market_Condition': selected_market_condition.value if selected_market_condition else 'None',
+                'Simulation_Days': simulation_days,
+                'Variables_Used': ', '.join(results.get('variables_used', ['BTC']))
+            }
+            
+            # Add summary as last row
+            export_df = pd.concat([export_df, pd.DataFrame([summary_row])], ignore_index=True)
+            
+            # Convert to CSV
+            csv_data = export_df.to_csv(index=False)
+            
+            # Create filename with timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            strategy_name_clean = (st.session_state.current_strategy_name or "strategy").replace(" ", "_")[:30]
+            filename = f"bitcoin_simulation_{strategy_name_clean}_{timestamp}.csv"
+            
+            st.download_button(
+                label="💾 Download CSV",
+                data=csv_data,
+                file_name=filename,
+                mime="text/csv",
+                help="Download detailed simulation results"
+            )
     
     results = st.session_state.simulation_results
     
