@@ -73,19 +73,19 @@ Generate the `conditions` JSON:"""
                 "depends_on": strategy_metadata.get('excel_names', [])
             }
     
-    def process_all_strategies(self, pinecone_client):
+    def process_all_strategies(self, pinecone_client, max_strategies=20):
         """
-        Process all strategies in Pinecone to generate conditions
+        Process strategies in Pinecone to generate conditions
         """
         if not pinecone_client or not pinecone_client.is_connected():
             return []
         
         try:
-            # Get all strategies from Pinecone
+            # Get strategies from Pinecone (limited number for performance)
             dummy_vector = [0.0] * 32
             response = pinecone_client.index.query(
                 vector=dummy_vector,
-                top_k=100,  # Get more strategies
+                top_k=max_strategies,  # Limit strategies for performance
                 include_metadata=True
             )
             
@@ -97,13 +97,14 @@ Generate the `conditions` JSON:"""
                         metadata = match.metadata
                         
                         # Generate conditions if empty
-                        if not metadata.get('conditions') or metadata.get('conditions') == '{}':
+                        conditions_str = metadata.get('conditions', '{}')
+                        if not conditions_str or conditions_str == '{}':
                             conditions = self.generate_conditions(metadata)
                             metadata['conditions'] = json.dumps(conditions)
                         else:
                             # Parse existing conditions
                             try:
-                                conditions = json.loads(metadata.get('conditions', '{}'))
+                                conditions = json.loads(conditions_str)
                             except:
                                 conditions = self.generate_conditions(metadata)
                                 metadata['conditions'] = json.dumps(conditions)

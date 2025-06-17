@@ -78,6 +78,7 @@ if 'simulation_results' not in st.session_state:
 # Initialize API connections
 pinecone_client, pinecone_status = init_pinecone()
 openai_connected, openai_status = check_openai_connection()
+strategy_processor = init_strategy_processor() if openai_connected else None
 
 # Sidebar configuration
 # API Connection Status
@@ -170,23 +171,65 @@ else:
 
 # Strategy selection
 st.sidebar.header("Strategy Selection")
-if pinecone_client:
-    try:
-        strategies = pinecone_client.list_strategies()
-        if strategies:
-            selected_strategy = st.sidebar.selectbox(
-                "Select Strategy",
-                options=strategies,
-                help="Choose a strategy from Pinecone database"
-            )
-        else:
-            st.sidebar.warning("No strategies found in Pinecone database")
-            selected_strategy = "CEMD (Default)"
-    except Exception as e:
-        st.sidebar.error(f"Error loading strategies: {str(e)}")
-        selected_strategy = "CEMD (Default)"
-else:
-    selected_strategy = "CEMD (Default)"
+
+# Load and process strategies if both APIs are connected
+processed_strategies = []
+if pinecone_client and strategy_processor:
+    if st.sidebar.button("Load Strategies", help="Click to load strategies from database"):
+        with st.spinner("Loading strategies and generating conditions..."):
+            try:
+                processed_strategies = load_processed_strategies(pinecone_client, strategy_processor)
+                if processed_strategies:
+                    st.sidebar.success(f"Loaded {len(processed_strategies)} strategies with AI-generated conditions")
+                    # Store in session state
+                    st.session_state.processed_strategies = processed_strategies
+                else:
+                    st.sidebar.warning("No strategies found in database")
+            except Exception as e:
+                st.sidebar.error(f"Error processing strategies: {str(e)}")
+    
+    # Use cached strategies if available
+    if 'processed_strategies' in st.session_state:
+        processed_strategies = st.session_state.processed_strategies
+
+# Strategy selection dropdown
+strategy_options = ["CEMD (Default)"]
+strategy_lookup = {"CEMD (Default)": None}
+
+if processed_strategies:
+    for strategy in processed_strategies:
+        # Use just the description as the display name
+        display_name = strategy['description']
+        strategy_options.append(display_name)
+        strategy_lookup[display_name] = strategy
+
+selected_strategy_name = st.sidebar.selectbox(
+    "Select Strategy",
+    options=strategy_options,
+    help="Choose a strategy to simulate"
+)
+
+selected_strategy = strategy_lookup[selected_strategy_name]
+
+# Display strategy details if selected
+if selected_strategy:
+    st.sidebar.subheader("Strategy Details")
+    st.sidebar.write(f"**Description:** {selected_strategy['description']}")
+    
+    # Show generated conditions
+    conditions = selected_strategy['conditions']
+    st.sidebar.write("**AI-Generated Conditions:**")
+    st.sidebar.json(conditions)
+    
+    # Performance metrics
+    perf = selected_strategy['performance']
+    col_a, col_b = st.sidebar.columns(2)
+    with col_a:
+        st.sidebar.metric("Total Return", f"{perf['total_return']:.1f}%")
+        st.sidebar.metric("Sharpe Ratio", f"{perf['sharpe_ratio']:.2f}")
+    with col_b:
+        st.sidebar.metric("Max Drawdown", f"{perf['max_drawdown']:.1f}%")
+        st.sidebar.metric("Success Rate", f"{perf['success_rate']:.1%}")
 
 # Main content area
 col1, col2 = st.columns([2, 1])
@@ -278,7 +321,6 @@ if st.session_state.bitcoin_data is not None:
                         simulation_days=simulation_days,
                         selected_strategy=selected_strategy,
                         market_condition=selected_market_condition,
-                        pinecone_client=pinecone_client,
                         progress_callback=lambda p: progress_bar.progress(p)
                     )
                     
