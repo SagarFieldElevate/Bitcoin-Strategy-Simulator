@@ -274,12 +274,12 @@ else:
 # Strategy search and filtering
 st.sidebar.subheader("Strategy Selection")
 
-# Data integrity filter
+# Strategy type filter for user convenience
 data_filter = st.sidebar.radio(
-    "Data Integrity Filter:",
-    ["Safe BTC-only (56 strategies)", "All strategies (254)", "Risky multi-factor (157)"],
+    "Strategy Type Filter:",
+    ["All strategies (254)", "BTC-only strategies", "Multi-factor strategies"],
     index=0,
-    help="Safe strategies use only verified authentic Bitcoin data"
+    help="Filter strategies by data requirements"
 )
 
 # Search functionality
@@ -292,37 +292,37 @@ search_term = st.sidebar.text_input(
 # Apply data integrity filter
 filtered_strategies = strategies if strategies else []
 
-if data_filter.startswith("Safe BTC-only") and strategies:
+if data_filter.startswith("BTC-only") and strategies:
     # Filter to only BTC-only strategies
-    safe_strategies = []
+    btc_strategies = []
     router = SimulationRouter()
     
     for strategy in strategies:
         try:
             simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
             if simulation_mode == 'btc_only':
-                safe_strategies.append(strategy)
+                btc_strategies.append(strategy)
         except:
             continue
     
-    filtered_strategies = safe_strategies
-    st.sidebar.success(f"✅ {len(filtered_strategies)} safe BTC-only strategies")
+    filtered_strategies = btc_strategies
+    st.sidebar.info(f"📊 {len(filtered_strategies)} BTC-only strategies")
 
-elif data_filter.startswith("Risky multi-factor") and strategies:
+elif data_filter.startswith("Multi-factor") and strategies:
     # Filter to multi-factor strategies
-    risky_strategies = []
+    multi_strategies = []
     router = SimulationRouter()
     
     for strategy in strategies:
         try:
             simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
             if simulation_mode == 'multi_factor':
-                risky_strategies.append(strategy)
+                multi_strategies.append(strategy)
         except:
             continue
     
-    filtered_strategies = risky_strategies
-    st.sidebar.warning(f"⚠️ {len(filtered_strategies)} strategies require macro data")
+    filtered_strategies = multi_strategies
+    st.sidebar.info(f"📈 {len(filtered_strategies)} multi-factor strategies")
 
 # Apply search filter
 if search_term and filtered_strategies:
@@ -596,29 +596,11 @@ if st.session_state.bitcoin_data is not None:
                             simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
                             required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
                             
-                            # Data availability verification for multi-factor strategies
+                            # Multi-factor strategy confirmation
                             if simulation_mode == 'multi_factor':
                                 macro_vars = [v for v in required_variables if v != 'BTC']
                                 if macro_vars:
-                                    status_placeholder.info(f"📊 Verifying data availability for: {', '.join(macro_vars)}")
-                                    
-                                    # Quick verification using enhanced extractor
-                                    from utils.enhanced_data_extractor import EnhancedDataExtractor
-                                    extractor = EnhancedDataExtractor()
-                                    
-                                    # Test data availability
-                                    missing_vars = []
-                                    for var in macro_vars:
-                                        if var in ['SPY', 'VIX', 'GOLD', 'TIPS_10Y', 'WTI']:
-                                            # These are confirmed available in intelligence-main
-                                            continue
-                                        else:
-                                            missing_vars.append(var)
-                                    
-                                    if missing_vars:
-                                        status_placeholder.warning(f"⚠️ Some variables may need verification: {', '.join(missing_vars)}")
-                                    else:
-                                        status_placeholder.success(f"✅ All macro data available for multi-factor simulation")
+                                    status_placeholder.info(f"📊 Multi-factor simulation with: {', '.join(macro_vars)}")
                             
                             # Store in session state
                             st.session_state.generated_strategy = processed_strategy
