@@ -49,8 +49,12 @@ def fetch_bitcoin_data():
         if missing_cols:
             raise RuntimeError(f"Missing columns: {missing_cols}. Available columns: {list(df.columns)}")
         
-        # Convert Date column to datetime
+        # Convert Date column to datetime and ensure timezone-naive
         df['Date'] = pd.to_datetime(df['Date'])
+        
+        # Remove timezone information if present for consistency
+        if hasattr(df['Date'].dtype, 'tz') and df['Date'].dt.tz is not None:
+            df['Date'] = df['Date'].dt.tz_localize(None)
         
         # Set Date as index
         df = df.set_index('Date')

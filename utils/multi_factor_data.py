@@ -405,8 +405,16 @@ Respond with JSON:
         if not data_frames:
             raise ValueError("No data could be fetched for any variables")
         
+        # Normalize all datetime indexes to be timezone-naive before combining
+        normalized_data = {}
+        for var, data in data_frames.items():
+            # Convert timezone-aware indexes to timezone-naive
+            if hasattr(data.index, 'tz') and data.index.tz is not None:
+                data.index = data.index.tz_localize(None)
+            normalized_data[var] = data
+        
         # Combine all data into a single DataFrame
-        combined_df = pd.DataFrame(data_frames)
+        combined_df = pd.DataFrame(normalized_data)
         
         # Forward fill missing values and drop any remaining NaN rows
         combined_df = combined_df.fillna(method='ffill').dropna()

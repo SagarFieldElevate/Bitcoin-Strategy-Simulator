@@ -57,8 +57,12 @@ def extract_gold_data_direct(pinecone_client):
             df = pd.DataFrame(all_gold_data)
             df = df.sort_values('date').drop_duplicates('date').reset_index(drop=True)
             
-            # Create pandas Series with proper index
-            series = pd.Series(df['price'].values, index=df['date'], name='GOLD')
+            # Create pandas Series with proper timezone-naive index
+            series = pd.Series(df['price'].values, index=pd.to_datetime(df['date']), name='GOLD')
+            
+            # Ensure timezone-naive for consistency with other data sources
+            if hasattr(series.index, 'tz') and series.index.tz is not None:
+                series.index = series.index.tz_localize(None)
             
             print(f"Successfully extracted gold data: {len(series)} points from {series.index[0].date()} to {series.index[-1].date()}")
             print(f"Price range: ${series.min():.2f} to ${series.max():.2f}")
