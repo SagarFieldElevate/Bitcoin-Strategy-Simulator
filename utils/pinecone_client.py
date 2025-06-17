@@ -107,10 +107,10 @@ class PineconeClient:
                 filter={"strategy_name": strategy_name}
             )
             
-            if response.matches:
+            if hasattr(response, 'matches') and response.matches:
                 # Get the first match
                 match = response.matches[0]
-                if match.metadata:
+                if hasattr(match, 'metadata') and match.metadata:
                     # Return the strategy code or implementation details
                     return {
                         'strategy_name': match.metadata.get('strategy_name'),
