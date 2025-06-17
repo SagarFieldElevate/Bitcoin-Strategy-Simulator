@@ -418,6 +418,13 @@ if st.session_state.bitcoin_data is not None:
             st.info("Please select a strategy to run simulation")
         else:
             if st.button("Run Simulation", type="primary"):
+                # Clear all previous simulation outputs
+                st.session_state.simulation_results = None
+                st.session_state.generated_strategy = None
+                st.session_state.current_strategy_name = None
+                st.session_state.simulation_mode = None
+                st.session_state.required_variables = None
+                
                 with st.spinner("Generating strategy code and running simulation..."):
                     try:
                         # Get strategy data
