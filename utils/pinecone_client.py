@@ -14,7 +14,8 @@ class PineconeClient:
         self.connected = False
         self.pc = None
         self.index = None
-        self.index_name = "bitcoin-strategies"
+        self.bitcoin_strategies_index = "bitcoin-strategies"
+        self.intelligence_main_index = "intelligence-main"
         
         # Initialize Pinecone connection
         self._initialize_connection()
@@ -29,15 +30,15 @@ class PineconeClient:
             existing_indexes = self.pc.list_indexes()
             index_names = [idx.name for idx in existing_indexes.indexes]
             
-            if self.index_name in index_names:
-                # Connect to existing index
-                self.index = self.pc.Index(self.index_name)
+            if self.bitcoin_strategies_index in index_names:
+                # Connect to bitcoin strategies index
+                self.index = self.pc.Index(self.bitcoin_strategies_index)
                 self.connected = True
-                print(f"Connected to existing index: {self.index_name}")
+                print(f"Connected to bitcoin strategies index: {self.bitcoin_strategies_index}")
             else:
                 # Index doesn't exist
                 self.connected = False
-                print(f"Index '{self.index_name}' not found. Available indexes: {index_names}")
+                print(f"Index '{self.bitcoin_strategies_index}' not found. Available indexes: {index_names}")
                 
         except Exception as e:
             self.connected = False
@@ -57,8 +58,8 @@ class PineconeClient:
         
         try:
             # Query the index to get all strategy metadata
-            # Use a dummy vector to query all strategies
-            dummy_vector = [0.0] * 1536  # OpenAI embedding dimension
+            # Use a dummy vector to query all strategies (32 dimensions for this index)
+            dummy_vector = [0.0] * 32
             
             # Query with top_k large enough to get all strategies
             response = self.index.query(
@@ -70,11 +71,15 @@ class PineconeClient:
             # Extract strategy names from metadata
             strategy_names = ["CEMD (Default)"]  # Always include default
             
-            for match in response.matches:
-                if match.metadata and 'strategy_name' in match.metadata:
-                    strategy_name = match.metadata['strategy_name']
-                    if strategy_name not in strategy_names:
-                        strategy_names.append(strategy_name)
+            if hasattr(response, 'matches'):
+                for match in response.matches:
+                    if hasattr(match, 'metadata') and match.metadata and 'description' in match.metadata:
+                        description = match.metadata['description']
+                        strategy_id = match.metadata.get('strategy_id', match.id)
+                        
+                        # Use description as strategy name, truncated for display
+                        display_name = description[:60] + "..." if len(description) > 60 else description
+                        strategy_names.append(f"{strategy_id}: {display_name}")
             
             return strategy_names
             
@@ -93,7 +98,7 @@ class PineconeClient:
         try:
             # Query for the specific strategy by name
             # First get all strategies and find the one we want
-            dummy_vector = [0.0] * 1536
+            dummy_vector = [0.0] * 32
             
             response = self.index.query(
                 vector=dummy_vector,
