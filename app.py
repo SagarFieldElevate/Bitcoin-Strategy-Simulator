@@ -184,20 +184,20 @@ st.sidebar.header("Simulation Parameters")
 # Number of simulations slider
 n_simulations = st.sidebar.slider(
     "Number of Simulations",
-    min_value=1000,
+    min_value=100,
     max_value=20000,
-    value=20000,
-    step=1000,
+    value=1000,
+    step=100,
     help="Higher numbers provide more accurate results but take longer to compute"
 )
 
 # Simulation period slider
 simulation_days = st.sidebar.slider(
     "Simulation Period (Days)",
-    min_value=30,
+    min_value=7,
     max_value=365,
-    value=365,
-    step=5,
+    value=30,
+    step=1,
     help="Number of days to simulate forward"
 )
 
