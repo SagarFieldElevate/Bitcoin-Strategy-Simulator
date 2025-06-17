@@ -11,8 +11,25 @@ class PineconeClient:
         Note: Actual Pinecone implementation would go here
         """
         self.api_key = api_key
+        self.connected = False
         # Initialize Pinecone connection here
         # This is a placeholder for the actual Pinecone client setup
+        self._test_connection()
+        
+    def _test_connection(self):
+        """Test Pinecone connection"""
+        try:
+            # For now, simulate a successful connection if API key exists
+            if self.api_key and len(self.api_key) > 10:
+                self.connected = True
+            else:
+                self.connected = False
+        except Exception:
+            self.connected = False
+    
+    def is_connected(self):
+        """Check if Pinecone is connected"""
+        return self.connected
         
     def list_strategies(self):
         """

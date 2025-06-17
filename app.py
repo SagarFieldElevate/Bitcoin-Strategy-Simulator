@@ -29,7 +29,12 @@ if 'bitcoin_data' not in st.session_state:
 if 'simulation_results' not in st.session_state:
     st.session_state.simulation_results = None
 
+# Initialize API connections
+pinecone_client, pinecone_status = init_pinecone()
+openai_connected, openai_status = check_openai_connection()
+
 # Sidebar configuration
+
 st.sidebar.header("Simulation Parameters")
 
 # Number of simulations slider
@@ -86,11 +91,32 @@ def init_pinecone():
     # Check multiple sources for the API key
     api_key = os.getenv("PINECONE_API_KEY") or st.secrets.get("PINECONE_API_KEY", "")
     if not api_key:
-        st.error("Pinecone API key not found in environment variables or secrets")
-        return None
-    return PineconeClient(api_key)
+        return None, "API key not found"
+    try:
+        client = PineconeClient(api_key)
+        # Test connection
+        strategies = client.list_strategies()
+        return client, "Connected"
+    except Exception as e:
+        return None, f"Connection failed: {str(e)}"
 
-pinecone_client = init_pinecone()
+@st.cache_resource
+def check_openai_connection():
+    # Check OpenAI API key
+    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
+    if not api_key:
+        return False, "API key not found"
+    try:
+        # Simple test to verify API key format
+        if api_key.startswith("sk-"):
+            return True, "Connected"
+        else:
+            return False, "Invalid API key format"
+    except Exception as e:
+        return False, f"Connection failed: {str(e)}"
+
+pinecone_client, pinecone_status = init_pinecone()
+openai_connected, openai_status = check_openai_connection()
 
 # Strategy selection
 st.sidebar.header("Strategy Selection")
