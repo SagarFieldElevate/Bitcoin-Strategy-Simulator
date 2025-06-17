@@ -12,7 +12,7 @@ from utils.monte_carlo import MonteCarloSimulator
 from utils.pinecone_client import PineconeClient
 from utils.visualization import create_fan_chart, create_terminal_price_histogram, create_cagr_distribution
 from utils.market_conditions import MarketCondition, get_condition_description
-from utils.strategy_processor import StrategyProcessor
+
 
 # Page configuration
 st.set_page_config(
@@ -55,19 +55,38 @@ def check_openai_connection():
     except Exception as e:
         return False, f"Connection failed: {str(e)}"
 
-# Initialize strategy processor
-@st.cache_resource
-def init_strategy_processor():
-    return StrategyProcessor()
-
-# Load and process strategies
+# Load strategies from Pinecone (simple and fast)
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
-def load_processed_strategies(_pinecone_client, _strategy_processor):
-    """Load and process all strategies from Pinecone"""
+def load_strategies_fast(_pinecone_client):
+    """Load strategy descriptions from Pinecone quickly"""
     if not _pinecone_client:
         return []
     
-    return _strategy_processor.process_all_strategies(_pinecone_client)
+    try:
+        # Get strategies from Pinecone
+        dummy_vector = [0.0] * 32
+        response = _pinecone_client.index.query(
+            vector=dummy_vector,
+            top_k=100,
+            include_metadata=True
+        )
+        
+        strategies = []
+        if hasattr(response, 'matches'):
+            for match in response.matches:
+                if hasattr(match, 'metadata') and match.metadata:
+                    description = match.metadata.get('description', '')
+                    if description:
+                        strategies.append({
+                            'id': match.metadata.get('strategy_id', match.id),
+                            'description': description,
+                            'metadata': match.metadata
+                        })
+        
+        return strategies
+    except Exception as e:
+        print(f"Error loading strategies: {e}")
+        return []
 
 # Initialize session state
 if 'bitcoin_data' not in st.session_state:
@@ -78,7 +97,6 @@ if 'simulation_results' not in st.session_state:
 # Initialize API connections
 pinecone_client, pinecone_status = init_pinecone()
 openai_connected, openai_status = check_openai_connection()
-strategy_processor = init_strategy_processor() if openai_connected else None
 
 # Sidebar configuration
 # API Connection Status
@@ -172,32 +190,26 @@ else:
 # Strategy selection
 st.sidebar.header("Strategy Selection")
 
-# Load and process strategies automatically if both APIs are connected
-processed_strategies = []
-if pinecone_client and strategy_processor:
+# Load strategies quickly from Pinecone
+strategies = []
+if pinecone_client:
     try:
-        with st.spinner("Loading all strategies from database..."):
-            processed_strategies = load_processed_strategies(pinecone_client, strategy_processor)
-            
-        if processed_strategies:
-            st.sidebar.success(f"Loaded {len(processed_strategies)} strategies with AI-generated conditions")
+        strategies = load_strategies_fast(pinecone_client)
+        if strategies:
+            st.sidebar.success(f"Loaded {len(strategies)} strategies")
         else:
             st.sidebar.warning("No strategies found in database")
-            
     except Exception as e:
         st.sidebar.error(f"Error loading strategies: {str(e)}")
-        
-elif not pinecone_client:
+else:
     st.sidebar.warning("Pinecone connection required to load strategies")
-elif not strategy_processor:
-    st.sidebar.warning("OpenAI connection required to generate strategy conditions")
 
 # Strategy selection dropdown
 strategy_options = ["CEMD (Default)"]
 strategy_lookup = {"CEMD (Default)": None}
 
-if processed_strategies:
-    for strategy in processed_strategies:
+if strategies:
+    for strategy in strategies:
         # Use just the description as the display name
         display_name = strategy['description']
         strategy_options.append(display_name)
@@ -216,20 +228,20 @@ if selected_strategy:
     st.sidebar.subheader("Strategy Details")
     st.sidebar.write(f"**Description:** {selected_strategy['description']}")
     
-    # Show generated conditions
-    conditions = selected_strategy['conditions']
-    st.sidebar.write("**AI-Generated Conditions:**")
-    st.sidebar.json(conditions)
-    
-    # Performance metrics
-    perf = selected_strategy['performance']
+    # Performance metrics from metadata
+    metadata = selected_strategy['metadata']
     col_a, col_b = st.sidebar.columns(2)
     with col_a:
-        st.sidebar.metric("Total Return", f"{perf['total_return']:.1f}%")
-        st.sidebar.metric("Sharpe Ratio", f"{perf['sharpe_ratio']:.2f}")
+        st.sidebar.metric("Total Return", f"{metadata.get('total_return', 0):.1f}%")
+        st.sidebar.metric("Sharpe Ratio", f"{metadata.get('sharpe_ratio', 0):.2f}")
     with col_b:
-        st.sidebar.metric("Max Drawdown", f"{perf['max_drawdown']:.1f}%")
-        st.sidebar.metric("Success Rate", f"{perf['success_rate']:.1%}")
+        st.sidebar.metric("Max Drawdown", f"{metadata.get('max_drawdown', 0):.1f}%")
+        st.sidebar.metric("Success Rate", f"{metadata.get('success_rate', 0):.1%}")
+    
+    # Show additional strategy info
+    st.sidebar.write(f"**Holding Period:** {metadata.get('avg_holding_days', 'N/A')} days")
+    st.sidebar.write(f"**Total Trades:** {metadata.get('total_trades', 'N/A')}")
+    st.sidebar.write(f"**Quality Score:** {metadata.get('quality_score', 'N/A')}/100")
 
 # Main content area
 col1, col2 = st.columns([2, 1])
