@@ -12,6 +12,7 @@ from utils.monte_carlo import MonteCarloSimulator
 from utils.pinecone_client import PineconeClient
 from utils.visualization import create_fan_chart, create_terminal_price_histogram, create_cagr_distribution
 from utils.market_conditions import MarketCondition, get_condition_description
+from utils.strategy_processor import StrategyProcessor
 
 # Page configuration
 st.set_page_config(
@@ -53,6 +54,20 @@ def check_openai_connection():
             return False, "Invalid API key format"
     except Exception as e:
         return False, f"Connection failed: {str(e)}"
+
+# Initialize strategy processor
+@st.cache_resource
+def init_strategy_processor():
+    return StrategyProcessor()
+
+# Load and process strategies
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def load_processed_strategies(_pinecone_client, _strategy_processor):
+    """Load and process all strategies from Pinecone"""
+    if not _pinecone_client:
+        return []
+    
+    return _strategy_processor.process_all_strategies(_pinecone_client)
 
 # Initialize session state
 if 'bitcoin_data' not in st.session_state:

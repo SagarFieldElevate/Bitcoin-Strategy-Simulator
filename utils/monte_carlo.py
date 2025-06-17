@@ -183,29 +183,35 @@ class MonteCarloSimulator:
         
         return pd.Series(pl, index=df.index)
     
-    def execute_strategy(self, df, strategy_name="CEMD (Default)", pinecone_client=None):
+    def execute_strategy(self, df, strategy=None):
         """
-        Execute strategy - either default CEMD or from Pinecone
+        Execute strategy - either default CEMD or processed strategy from Pinecone
         """
-        if strategy_name == "CEMD (Default)" or pinecone_client is None:
+        if strategy is None or strategy == "CEMD (Default)":
             return self.cemd_strategy(df)
         else:
-            # Load strategy from Pinecone
             try:
-                strategy_code = pinecone_client.get_strategy(strategy_name)
-                # Execute custom strategy (implement based on Pinecone structure)
-                # For now, fallback to CEMD
-                return self.cemd_strategy(df)
+                # Import strategy processor here to avoid circular imports
+                from .strategy_processor import StrategyProcessor
+                processor = StrategyProcessor()
+                
+                # Execute strategy using its conditions
+                if isinstance(strategy, dict) and 'conditions' in strategy:
+                    return processor.execute_strategy_conditions(df, strategy['conditions'])
+                else:
+                    # Fallback to default strategy
+                    return self.cemd_strategy(df)
+                    
             except Exception as e:
-                st.warning(f"Failed to load strategy {strategy_name}, using default CEMD: {str(e)}")
+                print(f"Failed to execute strategy, using default CEMD: {str(e)}")
                 return self.cemd_strategy(df)
     
     def calculate_equity_curve(self, returns):
         """Calculate equity curve from returns"""
         return (1 + returns).cumprod()
     
-    def run_simulation(self, n_simulations, simulation_days, selected_strategy="CEMD (Default)", 
-                      market_condition=None, pinecone_client=None, progress_callback=None):
+    def run_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+                      market_condition=None, progress_callback=None):
         """
         Run complete Monte Carlo simulation with market condition scenarios
         """
@@ -224,7 +230,7 @@ class MonteCarloSimulator:
             ohlcv_df = self.synthesize_ohlcv(path, self.last_date + pd.Timedelta(days=1))
             
             # Execute strategy
-            returns = self.execute_strategy(ohlcv_df, selected_strategy, pinecone_client)
+            returns = self.execute_strategy(ohlcv_df, selected_strategy)
             
             # Calculate equity curve
             equity = self.calculate_equity_curve(returns)
