@@ -23,6 +23,36 @@ st.set_page_config(
 st.title("₿ Bitcoin Strategy Monte Carlo Simulator")
 st.markdown("Advanced Monte Carlo simulation with GARCH+jumps modeling for Bitcoin trading strategies")
 
+# Initialize Pinecone client
+@st.cache_resource
+def init_pinecone():
+    # Check multiple sources for the API key
+    api_key = os.getenv("PINECONE_API_KEY") or st.secrets.get("PINECONE_API_KEY", "")
+    if not api_key:
+        return None, "API key not found"
+    try:
+        client = PineconeClient(api_key)
+        # Test connection
+        strategies = client.list_strategies()
+        return client, "Connected"
+    except Exception as e:
+        return None, f"Connection failed: {str(e)}"
+
+@st.cache_resource
+def check_openai_connection():
+    # Check OpenAI API key
+    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
+    if not api_key:
+        return False, "API key not found"
+    try:
+        # Simple test to verify API key format
+        if api_key.startswith("sk-"):
+            return True, "Connected"
+        else:
+            return False, "Invalid API key format"
+    except Exception as e:
+        return False, f"Connection failed: {str(e)}"
+
 # Initialize session state
 if 'bitcoin_data' not in st.session_state:
     st.session_state.bitcoin_data = None
@@ -34,6 +64,18 @@ pinecone_client, pinecone_status = init_pinecone()
 openai_connected, openai_status = check_openai_connection()
 
 # Sidebar configuration
+# API Connection Status
+st.sidebar.header("API Connection Status")
+
+# Pinecone status
+pinecone_color = "🟢" if pinecone_client else "🔴"
+st.sidebar.markdown(f"{pinecone_color} **Pinecone:** {pinecone_status}")
+
+# OpenAI status  
+openai_color = "🟢" if openai_connected else "🔴"
+st.sidebar.markdown(f"{openai_color} **OpenAI:** {openai_status}")
+
+st.sidebar.markdown("---")
 
 st.sidebar.header("Simulation Parameters")
 
@@ -85,38 +127,7 @@ risk_percent = st.sidebar.slider(
     help="Percentage of capital risked per trade"
 )
 
-# Initialize Pinecone client
-@st.cache_resource
-def init_pinecone():
-    # Check multiple sources for the API key
-    api_key = os.getenv("PINECONE_API_KEY") or st.secrets.get("PINECONE_API_KEY", "")
-    if not api_key:
-        return None, "API key not found"
-    try:
-        client = PineconeClient(api_key)
-        # Test connection
-        strategies = client.list_strategies()
-        return client, "Connected"
-    except Exception as e:
-        return None, f"Connection failed: {str(e)}"
 
-@st.cache_resource
-def check_openai_connection():
-    # Check OpenAI API key
-    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
-    if not api_key:
-        return False, "API key not found"
-    try:
-        # Simple test to verify API key format
-        if api_key.startswith("sk-"):
-            return True, "Connected"
-        else:
-            return False, "Invalid API key format"
-    except Exception as e:
-        return False, f"Connection failed: {str(e)}"
-
-pinecone_client, pinecone_status = init_pinecone()
-openai_connected, openai_status = check_openai_connection()
 
 # Strategy selection
 st.sidebar.header("Strategy Selection")

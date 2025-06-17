@@ -18,7 +18,7 @@ def fetch_bitcoin_data():
     
     # Download data
     df = yf.download(
-        tickers=TICKER,
+        TICKER,
         start=START_DATE,
         end=END_DATE,
         interval="1d",

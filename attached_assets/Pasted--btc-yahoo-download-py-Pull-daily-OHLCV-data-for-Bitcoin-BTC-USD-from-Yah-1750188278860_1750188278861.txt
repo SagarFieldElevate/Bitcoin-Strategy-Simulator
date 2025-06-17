@@ -1,0 +1,79 @@
+"""
+btc_yahoo_download.py
+---------------------
+Pull daily OHLCV data for Bitcoin (BTC-USD) from Yahoo Finance
+for 2015-01-01 through today and save to a CSV.
+
+Run:
+    python btc_yahoo_download.py
+
+Requires:
+    pip install yfinance pandas
+"""
+
+import os
+from datetime import date
+import pandas as pd
+import yfinance as yf
+
+# ----------------------------------------------------------------------
+# 1. Parameters – adjust if you need a different window or filename
+# ----------------------------------------------------------------------
+TICKER = "BTC-USD"
+START_DATE = "2015-01-01"
+END_DATE = date.today().strftime("%Y-%m-%d")    # today's date
+DATA_DIR = "data"
+CSV_OUT = os.path.join(DATA_DIR, "btc_daily_2015_2025.csv")
+
+def download_bitcoin_data():
+    """Download Bitcoin OHLCV data from Yahoo Finance"""
+    
+    # Create data directory if it doesn't exist
+    os.makedirs(DATA_DIR, exist_ok=True)
+    
+    # ----------------------------------------------------------------------
+    # 2. Fetch data
+    # ----------------------------------------------------------------------
+    print(f"Downloading {TICKER} daily OHLCV from {START_DATE} to {END_DATE} ...")
+    df = yf.download(
+        TICKER,
+        start=START_DATE,
+        end=END_DATE,
+        interval="1d",
+        progress=True,
+        auto_adjust=False,   # keep raw OHLC (Adj Close duplicates Close for BTC)
+        threads=True
+    )
+
+    if df.empty:
+        raise RuntimeError("Download returned an empty DataFrame. "
+                           "Check your internet connection or ticker symbol.")
+
+    # ----------------------------------------------------------------------
+    # 3. Basic sanity checks
+    # ----------------------------------------------------------------------
+    df = df.rename_axis("Date").reset_index()
+
+    expected_rows = (pd.to_datetime(END_DATE) - pd.to_datetime(START_DATE)).days + 1
+    missing_rows = expected_rows - len(df)
+
+    print(f"Rows downloaded  : {len(df):,}")
+    print(f"Expected rows    : {expected_rows:,}")
+    print(f"Missing rows     : {missing_rows:,}")
+
+    # Simple gap flag: days with zero volume (rare) or NaNs
+    gaps = df[df["Volume"] == 0]
+    if not gaps.empty:
+        print(f"⚠️  Found {len(gaps)} zero-volume rows (exchange outages?). "
+              "Consider forward-filling later.")
+
+    # ----------------------------------------------------------------------
+    # 4. Save to CSV
+    # ----------------------------------------------------------------------
+    df.to_csv(CSV_OUT, index=False)
+    print(f"\n✅ Saved to: {CSV_OUT}")
+    
+    return df
+
+if __name__ == "__main__":
+    download_bitcoin_data()
