@@ -216,9 +216,26 @@ class MonteCarloSimulator:
         return (1 + returns).cumprod()
     
     def run_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
-                      market_condition=None, progress_callback=None):
+                      market_condition=None, progress_callback=None, simulation_mode='btc_only', 
+                      required_variables=None):
         """
-        Run complete Monte Carlo simulation with market condition scenarios
+        Run complete Monte Carlo simulation with market condition scenarios and multi-factor support
+        """
+        if simulation_mode == 'multi_factor' and required_variables:
+            return self.run_multi_factor_simulation(
+                n_simulations, simulation_days, selected_strategy, 
+                market_condition, progress_callback, required_variables
+            )
+        else:
+            return self.run_btc_only_simulation(
+                n_simulations, simulation_days, selected_strategy, 
+                market_condition, progress_callback
+            )
+    
+    def run_btc_only_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+                               market_condition=None, progress_callback=None):
+        """
+        Run BTC-only Monte Carlo simulation (original logic)
         """
         # Generate price paths with market condition adjustments
         close_paths = self.generate_price_paths(n_simulations, simulation_days, market_condition)
@@ -258,7 +275,103 @@ class MonteCarloSimulator:
         
         # Calculate summary statistics
         results = {
+            'simulation_mode': 'btc_only',
             'close_paths': close_paths,
+            'cagr_values': cagr_values,
+            'drawdown_values': drawdown_values,
+            'median_cagr': np.median(cagr_values),
+            'worst_decile_cagr': np.percentile(cagr_values, 10),
+            'median_max_drawdown': np.median(drawdown_values)
+        }
+        
+        return results
+    
+    def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+                                   market_condition=None, progress_callback=None, required_variables=None):
+        """
+        Run multi-factor Monte Carlo simulation with correlated macro variables
+        """
+        from .multi_factor_data import MultiFactorDataFetcher
+        
+        print(f"Running multi-factor simulation with variables: {required_variables}")
+        
+        # Fetch historical multi-factor data
+        data_fetcher = MultiFactorDataFetcher()
+        historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
+        
+        # Calculate correlation matrix
+        correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
+        
+        # Generate correlated paths for all variables
+        simulated_paths = data_fetcher.simulate_multi_factor_series(
+            historical_data, n_simulations, simulation_days, correlation_matrix
+        )
+        
+        # Calculate strategy performance for each simulation
+        cagr_values = []
+        drawdown_values = []
+        
+        for i in range(n_simulations):
+            if progress_callback:
+                progress_callback(i / n_simulations)
+            
+            # Create multi-factor DataFrame for this simulation
+            sim_data = {}
+            for var in required_variables:
+                if var in simulated_paths:
+                    sim_data[var] = simulated_paths[var][i]
+            
+            # Create date index
+            start_date = self.last_date + pd.Timedelta(days=1)
+            date_index = pd.date_range(start=start_date, periods=simulation_days, freq='D')
+            
+            multi_factor_df = pd.DataFrame(sim_data, index=date_index)
+            
+            # For strategy execution, we still need OHLCV format for BTC
+            if 'BTC' in sim_data:
+                btc_path = sim_data['BTC']
+                ohlcv_df = self.synthesize_ohlcv(btc_path, start_date)
+                
+                # Add other variables as additional columns
+                for var in required_variables:
+                    if var != 'BTC' and var in sim_data:
+                        ohlcv_df[var] = sim_data[var]
+            else:
+                # Fallback to BTC-only if BTC not in required variables
+                print("Warning: BTC not in required variables, using fallback")
+                continue
+            
+            # Execute strategy with multi-factor data
+            returns = self.execute_strategy(ohlcv_df, selected_strategy)
+            
+            # Calculate equity curve
+            equity = self.calculate_equity_curve(returns)
+            
+            if len(equity) == 0 or equity.iloc[-1] <= 0 or pd.isna(equity.iloc[-1]):
+                cagr_values.append(-100.0)
+                drawdown_values.append(-100.0)
+            else:
+                # Calculate CAGR
+                final_equity = equity.iloc[-1]
+                cagr = (final_equity ** (365 / len(equity)) - 1) * 100
+                cagr_values.append(cagr)
+                
+                # Calculate maximum drawdown
+                max_dd = (equity / equity.cummax() - 1).min() * 100
+                drawdown_values.append(max_dd)
+        
+        if progress_callback:
+            progress_callback(1.0)
+        
+        # Calculate summary statistics
+        cagr_values = np.array(cagr_values)
+        drawdown_values = np.array(drawdown_values)
+        
+        results = {
+            'simulation_mode': 'multi_factor',
+            'variables_used': required_variables,
+            'close_paths': simulated_paths.get('BTC', []),  # Return BTC paths for visualization
+            'all_paths': simulated_paths,  # Include all variable paths
             'cagr_values': cagr_values,
             'drawdown_values': drawdown_values,
             'median_cagr': np.median(cagr_values),

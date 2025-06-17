@@ -12,6 +12,7 @@ from utils.monte_carlo import MonteCarloSimulator
 from utils.pinecone_client import PineconeClient
 from utils.visualization import create_fan_chart, create_terminal_price_histogram, create_cagr_distribution
 from utils.market_conditions import MarketCondition, get_condition_description
+from utils.simulation_router import SimulationRouter
 
 
 # Page configuration
@@ -155,6 +156,10 @@ if 'generated_strategy' not in st.session_state:
     st.session_state.generated_strategy = None
 if 'current_strategy_name' not in st.session_state:
     st.session_state.current_strategy_name = None
+if 'simulation_mode' not in st.session_state:
+    st.session_state.simulation_mode = None
+if 'required_variables' not in st.session_state:
+    st.session_state.required_variables = None
 
 # Initialize API connections
 pinecone_client, pinecone_status = init_pinecone()
@@ -288,9 +293,13 @@ selected_strategy_name = st.sidebar.selectbox(
 if st.session_state.current_strategy_name != selected_strategy_name:
     st.session_state.generated_strategy = None
     st.session_state.current_strategy_name = selected_strategy_name
+    st.session_state.simulation_mode = None
+    st.session_state.required_variables = None
 
 strategy_generated = st.session_state.generated_strategy is not None
 processed_strategy = st.session_state.generated_strategy
+simulation_mode = st.session_state.simulation_mode
+required_variables = st.session_state.required_variables
 
 if selected_strategy_name != "Select a strategy...":
     if st.sidebar.button("Generate Strategy Code", type="primary"):
@@ -303,17 +312,33 @@ if selected_strategy_name != "Select a strategy...":
                 processor = StrategyProcessor()
                 processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
                 
+                # Use smart router to determine simulation mode
+                router = SimulationRouter()
+                simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
+                required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
+                
                 # Store in session state
                 st.session_state.generated_strategy = processed_strategy
                 st.session_state.current_strategy_name = selected_strategy_name
+                st.session_state.simulation_mode = simulation_mode
+                st.session_state.required_variables = required_variables
                 strategy_generated = True
+                
+                # Show generation status with simulation mode info
                 st.sidebar.success("Strategy code generated!")
+                st.sidebar.info(f"🔧 Simulation mode: **{simulation_mode.replace('_', ' ').title()}**")
+                if simulation_mode == 'multi_factor':
+                    st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
             else:
                 st.sidebar.error("Could not find strategy data")
     
     # Show generation status
     if strategy_generated:
         st.sidebar.success("✅ Strategy code ready for simulation")
+        if simulation_mode:
+            st.sidebar.info(f"🔧 Mode: **{simulation_mode.replace('_', ' ').title()}**")
+            if simulation_mode == 'multi_factor' and required_variables:
+                st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
     else:
         st.sidebar.warning("⚠️ Click 'Generate Strategy Code' to prepare for simulation")
 else:
