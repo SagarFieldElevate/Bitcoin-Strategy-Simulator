@@ -302,45 +302,14 @@ simulation_mode = st.session_state.simulation_mode
 required_variables = st.session_state.required_variables
 
 if selected_strategy_name != "Select a strategy...":
-    if st.sidebar.button("Generate Strategy Code", type="primary"):
-        with st.spinner("Processing strategy with AI..."):
-            selected_strategy_data = strategy_lookup[selected_strategy_name]
-            
-            if selected_strategy_data:
-                # Use OpenAI to process the strategy
-                from utils.strategy_processor import StrategyProcessor
-                processor = StrategyProcessor()
-                processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
-                
-                # Use smart router to determine simulation mode
-                router = SimulationRouter()
-                simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
-                required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
-                
-                # Store in session state
-                st.session_state.generated_strategy = processed_strategy
-                st.session_state.current_strategy_name = selected_strategy_name
-                st.session_state.simulation_mode = simulation_mode
-                st.session_state.required_variables = required_variables
-                strategy_generated = True
-                
-                # Show generation status with simulation mode info
-                st.sidebar.success("Strategy code generated!")
-                st.sidebar.info(f"🔧 Simulation mode: **{simulation_mode.replace('_', ' ').title()}**")
-                if simulation_mode == 'multi_factor':
-                    st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
-            else:
-                st.sidebar.error("Could not find strategy data")
+    # Show strategy selection status
+    st.sidebar.success("✅ Strategy selected and ready for simulation")
     
-    # Show generation status
-    if strategy_generated:
-        st.sidebar.success("✅ Strategy code ready for simulation")
-        if simulation_mode:
-            st.sidebar.info(f"🔧 Mode: **{simulation_mode.replace('_', ' ').title()}**")
-            if simulation_mode == 'multi_factor' and required_variables:
-                st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
-    else:
-        st.sidebar.warning("⚠️ Click 'Generate Strategy Code' to prepare for simulation")
+    # Show detection preview if available
+    if simulation_mode:
+        st.sidebar.info(f"🔧 Mode: **{simulation_mode.replace('_', ' ').title()}**")
+        if simulation_mode == 'multi_factor' and required_variables:
+            st.sidebar.info(f"📊 Variables: {', '.join(required_variables)}")
 else:
     st.sidebar.info("Please select a strategy to continue")
 
@@ -444,34 +413,70 @@ if st.session_state.bitcoin_data is not None:
     col_sim1, col_sim2 = st.columns([3, 1])
     
     with col_sim1:
-        # Check if strategy has been generated
+        # Check if strategy has been selected
         if selected_strategy_name == "Select a strategy...":
-            st.info("Please select a strategy and generate its code before running simulation")
-        elif not strategy_generated and selected_strategy_name != "Select a strategy...":
-            st.info("Please click 'Generate Strategy Code' button before running simulation")
+            st.info("Please select a strategy to run simulation")
         else:
-            if st.button("Run Monte Carlo Simulation", type="primary"):
-                with st.spinner(f"Running {n_simulations:,} simulations over {simulation_days} days..."):
+            if st.button("Run Simulation", type="primary"):
+                with st.spinner("Generating strategy code and running simulation..."):
                     try:
-                        # Initialize Monte Carlo simulator
-                        simulator = MonteCarloSimulator(st.session_state.bitcoin_data)
+                        # Get strategy data
+                        selected_strategy_data = strategy_lookup[selected_strategy_name]
                         
-                        # Run simulation with processed strategy
-                        progress_bar = st.progress(0)
-                        
-                        results = simulator.run_simulation(
-                            n_simulations=n_simulations,
-                            simulation_days=simulation_days,
-                            selected_strategy=processed_strategy,  # Use the AI-generated strategy
-                            market_condition=selected_market_condition,
-                            progress_callback=lambda p: progress_bar.progress(p)
-                        )
-                        
-                        st.session_state.simulation_results = results
-                        st.success("Simulation completed successfully!")
+                        if not selected_strategy_data:
+                            st.error("Could not find strategy data")
+                        else:
+                            # Step 1: Generate strategy code
+                            from utils.strategy_processor import StrategyProcessor
+                            processor = StrategyProcessor()
+                            processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
+                            
+                            # Step 2: Use smart router to determine simulation mode
+                            router = SimulationRouter()
+                            simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
+                            required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
+                            
+                            # Store in session state
+                            st.session_state.generated_strategy = processed_strategy
+                            st.session_state.current_strategy_name = selected_strategy_name
+                            st.session_state.simulation_mode = simulation_mode
+                            st.session_state.required_variables = required_variables
+                            
+                            # Step 3: Initialize Monte Carlo simulator with Pinecone client
+                            simulator = MonteCarloSimulator(st.session_state.bitcoin_data, pinecone_client)
+                            
+                            # Step 4: Run simulation with auto-detected mode
+                            progress_bar = st.progress(0)
+                            
+                            mode_display = simulation_mode.replace('_', ' ').title() if simulation_mode else "BTC Only"
+                            vars_display = ', '.join(required_variables) if required_variables else "BTC"
+                            st.info(f"Running {mode_display} simulation with {vars_display}")
+                            
+                            results = simulator.run_simulation(
+                                n_simulations=n_simulations,
+                                simulation_days=simulation_days,
+                                selected_strategy=processed_strategy,
+                                market_condition=selected_market_condition,
+                                progress_callback=lambda p: progress_bar.progress(p),
+                                simulation_mode=simulation_mode or 'btc_only',
+                                required_variables=required_variables or ['BTC']
+                            )
+                            
+                            st.session_state.simulation_results = results
+                            completion_mode = results.get('simulation_mode', simulation_mode)
+                            completion_display = completion_mode.replace('_', ' ').title() if completion_mode else "BTC Only"
+                            st.success(f"✓ {completion_display} simulation completed!")
+                            
+                            # Show simulation mode info
+                            if results.get('simulation_mode') == 'multi_factor':
+                                used_vars = results.get('variables_used', required_variables)
+                                if used_vars:
+                                    st.info(f"📊 Used variables: {', '.join(used_vars)}")
                         
                     except Exception as e:
                         st.error(f"Error running simulation: {str(e)}")
+                        import traceback
+                        st.error(traceback.format_exc())
     
     with col_sim2:
         if st.session_state.simulation_results is not None:

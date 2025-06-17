@@ -8,11 +8,12 @@ import streamlit as st
 from .market_conditions import MarketCondition, adjust_mu_sigma_for_condition
 
 class MonteCarloSimulator:
-    def __init__(self, bitcoin_data):
+    def __init__(self, bitcoin_data, pinecone_client=None):
         """
         Initialize Monte Carlo simulator with Bitcoin data
         """
         self.df_hist = bitcoin_data.copy()
+        self.pinecone_client = pinecone_client
         
         # Extract price and volume data
         self.prices = self.df_hist["Close"].astype(float).values
@@ -296,7 +297,7 @@ class MonteCarloSimulator:
         print(f"Running multi-factor simulation with variables: {required_variables}")
         
         # Fetch historical multi-factor data
-        data_fetcher = MultiFactorDataFetcher()
+        data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
         historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
         
         # Calculate correlation matrix
