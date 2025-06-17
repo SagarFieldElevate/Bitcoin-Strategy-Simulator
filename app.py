@@ -61,7 +61,7 @@ def init_strategy_processor():
     return StrategyProcessor()
 
 # Load and process strategies
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+@st.cache_data(ttl=1800)  # Cache for 30 minutes
 def load_processed_strategies(_pinecone_client, _strategy_processor):
     """Load and process all strategies from Pinecone"""
     if not _pinecone_client:
@@ -172,51 +172,25 @@ else:
 # Strategy selection
 st.sidebar.header("Strategy Selection")
 
-# Load and process strategies if both APIs are connected
+# Load and process strategies automatically if both APIs are connected
 processed_strategies = []
 if pinecone_client and strategy_processor:
-    col_load, col_clear = st.sidebar.columns(2)
-    
-    with col_load:
-        if st.button("Load All Strategies", help="Load all 254 strategies from database"):
-            progress_bar = st.sidebar.progress(0)
-            status_text = st.sidebar.empty()
+    try:
+        with st.spinner("Loading all strategies from database..."):
+            processed_strategies = load_processed_strategies(pinecone_client, strategy_processor)
             
-            try:
-                status_text.text("Connecting to database...")
-                progress_bar.progress(0.1)
-                
-                status_text.text("Loading strategies...")
-                progress_bar.progress(0.3)
-                
-                processed_strategies = load_processed_strategies(pinecone_client, strategy_processor)
-                progress_bar.progress(0.9)
-                
-                if processed_strategies:
-                    st.sidebar.success(f"Loaded {len(processed_strategies)} strategies with AI-generated conditions")
-                    # Store in session state
-                    st.session_state.processed_strategies = processed_strategies
-                else:
-                    st.sidebar.warning("No strategies found in database")
-                
-                progress_bar.progress(1.0)
-                status_text.text("Complete!")
-                
-            except Exception as e:
-                st.sidebar.error(f"Error processing strategies: {str(e)}")
-                progress_bar.empty()
-                status_text.empty()
-    
-    with col_clear:
-        if st.button("Clear Cache"):
-            if 'processed_strategies' in st.session_state:
-                del st.session_state.processed_strategies
-                st.sidebar.info("Strategy cache cleared")
-    
-    # Use cached strategies if available
-    if 'processed_strategies' in st.session_state:
-        processed_strategies = st.session_state.processed_strategies
-        st.sidebar.info(f"Using {len(processed_strategies)} cached strategies")
+        if processed_strategies:
+            st.sidebar.success(f"Loaded {len(processed_strategies)} strategies with AI-generated conditions")
+        else:
+            st.sidebar.warning("No strategies found in database")
+            
+    except Exception as e:
+        st.sidebar.error(f"Error loading strategies: {str(e)}")
+        
+elif not pinecone_client:
+    st.sidebar.warning("Pinecone connection required to load strategies")
+elif not strategy_processor:
+    st.sidebar.warning("OpenAI connection required to generate strategy conditions")
 
 # Strategy selection dropdown
 strategy_options = ["CEMD (Default)"]
