@@ -613,6 +613,45 @@ wheels = [
 ]
 
 [[package]]
+name = "pinecone"
+version = "7.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "pinecone-plugin-assistant" },
+    { name = "pinecone-plugin-interface" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3", marker = "python_full_version < '4.0'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6b/93/33aece9956134870919b4d6660469c555cbd4223ce7924af1180ae89c388/pinecone-7.1.0.tar.gz", hash = "sha256:f8448f361806515b6e0e9c4e67ec0b14ce7efdbd98429925f836ee5f6cd83de4", size = 209569 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/ca/1024dd0929bd67504762bcc40a699681e78655dfa174d15bff3442e33707/pinecone-7.1.0-py3-none-any.whl", hash = "sha256:a8c32c16043384d0259ecdfcaefdaf2610ea4648962f23f0d7a2326399338608", size = 517902 },
+]
+
+[[package]]
+name = "pinecone-plugin-assistant"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fa/8c/2db25e4d88ec31cc096b71473938e9269459eb567b50ea49dbea9a88f3ab/pinecone_plugin_assistant-1.7.0.tar.gz", hash = "sha256:e26e3ba10a8b71c3da0d777cff407668022e82963c4913d0ffeb6c552721e482", size = 145608 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/29/9aab5e3e22086da8ba40fa9cd34bfefffd9cdf3f43f237fd7c9969568f20/pinecone_plugin_assistant-1.7.0-py3-none-any.whl", hash = "sha256:864cb8e7930588e6c2da97c6d44f0240969195f43fa303c5db76cbc12bf903a5", size = 239972 },
+]
+
+[[package]]
+name = "pinecone-plugin-interface"
+version = "0.0.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/fb/e8a4063264953ead9e2b24d9b390152c60f042c951c47f4592e9996e57ff/pinecone_plugin_interface-0.0.7.tar.gz", hash = "sha256:b8e6675e41847333aa13923cc44daa3f85676d7157324682dc1640588a982846", size = 3370 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/1d/a21fdfcd6d022cb64cef5c2a29ee6691c6c103c4566b41646b080b7536a5/pinecone_plugin_interface-0.0.7-py3-none-any.whl", hash = "sha256:875857ad9c9fc8bbc074dbe780d187a2afd21f5bfe0f3b08601924a61ef1bba8", size = 6249 },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -800,6 +839,7 @@ dependencies = [
     { name = "arch" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pinecone" },
     { name = "plotly" },
     { name = "psycopg2-binary" },
     { name = "sqlalchemy" },
@@ -812,6 +852,7 @@ requires-dist = [
     { name = "arch", specifier = ">=7.2.0" },
     { name = "numpy", specifier = ">=2.3.0" },
     { name = "pandas", specifier = ">=2.3.0" },
+    { name = "pinecone", specifier = ">=7.1.0" },
     { name = "plotly", specifier = ">=6.1.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "sqlalchemy", specifier = ">=2.0.41" },
