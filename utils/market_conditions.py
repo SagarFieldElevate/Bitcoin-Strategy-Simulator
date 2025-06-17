@@ -2,6 +2,7 @@
 Market condition scenarios for Monte Carlo simulation
 """
 from enum import Enum
+import numpy as np
 
 class MarketCondition(Enum):
     HIGH_VOL_UP = "High Volatility Bull"
@@ -23,20 +24,39 @@ def adjust_mu_sigma_for_condition(mu, sigma, condition: MarketCondition):
     Returns:
         tuple: (adjusted_mu, adjusted_sigma)
     """
+    # Debug logging - original values
+    print(f"[MARKET DEBUG] Base μ = {mu:.6f} (daily), Drift/year = {mu*365:.2%}")
+    print(f"[MARKET DEBUG] Base σ = {sigma:.4f} (daily), Vol/year = {sigma*np.sqrt(365):.2%}")
+    print(f"[MARKET DEBUG] Condition: {condition.value}")
+    
+    # Apply adjustments based on market condition
     if condition == MarketCondition.HIGH_VOL_UP:
-        return mu * 1.5, sigma * 1.75
+        adjusted_mu, adjusted_sigma = mu * 1.5, sigma * 1.75
     elif condition == MarketCondition.HIGH_VOL_DOWN:
-        return -abs(mu) * 1.5, sigma * 1.75
+        # Force strong negative drift for bear crash scenarios
+        base_negative_mu = -abs(mu) * 1.5
+        # Add floor to ensure meaningful negative drift
+        adjusted_mu = min(base_negative_mu, -0.001)  # At least -36.5% annually
+        adjusted_sigma = sigma * 1.75
     elif condition == MarketCondition.HIGH_VOL_STABLE:
-        return 0.0, sigma * 1.5
+        adjusted_mu, adjusted_sigma = 0.0, sigma * 1.5
     elif condition == MarketCondition.STABLE_VOL_UP:
-        return mu * 1.25, sigma * 0.5
+        adjusted_mu, adjusted_sigma = mu * 1.25, sigma * 0.5
     elif condition == MarketCondition.STABLE_VOL_DOWN:
-        return -abs(mu) * 1.25, sigma * 0.5
+        # Force meaningful negative drift for stable bear
+        base_negative_mu = -abs(mu) * 1.25
+        adjusted_mu = min(base_negative_mu, -0.0005)  # At least -18% annually
+        adjusted_sigma = sigma * 0.5
     elif condition == MarketCondition.STABLE_VOL_STABLE:
-        return 0.0, sigma * 0.5
+        adjusted_mu, adjusted_sigma = 0.0, sigma * 0.5
     else:
-        return mu, sigma  # fallback if no match
+        adjusted_mu, adjusted_sigma = mu, sigma  # fallback if no match
+    
+    # Debug logging - adjusted values
+    print(f"[Sim Regime: {condition.value}] Adjusted μ = {adjusted_mu:.6f}, σ = {adjusted_sigma:.4f}")
+    print(f"[Sim Regime: {condition.value}] Adjusted Drift/year = {adjusted_mu*365:.2%}, Vol/year = {adjusted_sigma*np.sqrt(365):.2%}")
+    
+    return adjusted_mu, adjusted_sigma
 
 def get_condition_description(condition: MarketCondition):
     """Get detailed description of market condition"""

@@ -31,12 +31,22 @@ class MonteCarloSimulator:
         daily_ret = np.diff(np.log(self.prices))
         self.mu_daily = daily_ret.mean()
         
+        # Debug logging for GARCH calibration
+        print(f"[GARCH DEBUG] Bitcoin data points: {len(self.prices)}")
+        print(f"[GARCH DEBUG] Daily returns calculated: {len(daily_ret)} observations")
+        print(f"[GARCH DEBUG] Raw daily μ = {self.mu_daily:.6f} ({self.mu_daily*365:.2%} annually)")
+        print(f"[GARCH DEBUG] Daily volatility = {daily_ret.std():.4f} ({daily_ret.std()*np.sqrt(365):.2%} annually)")
+        
         # Jump calibration
         sigma_day = daily_ret.std()
         jump_mask = np.abs(daily_ret) > 6 * sigma_day
         self.jump_lambda = jump_mask.mean()
         self.jump_mu = daily_ret[jump_mask].mean() if jump_mask.any() else 0.0
         self.jump_sigma = daily_ret[jump_mask].std() if jump_mask.any() else 0.0
+        
+        print(f"[GARCH DEBUG] Jump frequency (lambda): {self.jump_lambda:.4f}")
+        print(f"[GARCH DEBUG] Jump size (mu): {self.jump_mu:.4f}")
+        print(f"[GARCH DEBUG] Jump volatility (sigma): {self.jump_sigma:.4f}")
         
         # Fit GARCH(1,1) model
         try:
@@ -69,10 +79,14 @@ class MonteCarloSimulator:
         if market_condition:
             # Calculate base volatility from GARCH parameters
             base_vol = np.sqrt(self.initial_variance) / 100
+            print(f"[PATH DEBUG] Calling adjust_mu_sigma_for_condition with mu={self.mu_daily:.6f}, sigma={base_vol:.4f}")
             mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(
                 self.mu_daily, base_vol, market_condition
             )
             sigma_multiplier = sigma_adjusted / base_vol
+            print(f"[PATH DEBUG] Market condition applied: mu_adjusted={mu_adjusted:.6f}, sigma_multiplier={sigma_multiplier:.4f}")
+        else:
+            print(f"[PATH DEBUG] No market condition applied, using base mu={self.mu_daily:.6f}")
         
         close_paths = np.empty((n_simulations, simulation_days + 1))
         close_paths[:, 0] = self.prices[-1]  # Start from current price
@@ -100,9 +114,17 @@ class MonteCarloSimulator:
                 # Calculate return with market condition adjustment
                 ret = mu_adjusted - 0.5 * sigma_t**2 + sigma_t * Z + J
                 
+                # Debug logging for first few price calculations
+                if path == 0 and t <= 3:
+                    print(f"[PATH DEBUG] Day {t}: mu_adj={mu_adjusted:.6f}, sigma_t={sigma_t:.4f}, Z={Z:.4f}, J={J:.4f}")
+                    print(f"[PATH DEBUG] Day {t}: ret={ret:.6f}, prev_price={prev:.2f}")
+                
                 # Calculate new price
                 price = prev * np.exp(ret)
                 closes.append(max(price, MIN_PRICE))
+                
+                if path == 0 and t <= 3:
+                    print(f"[PATH DEBUG] Day {t}: new_price={price:.2f}, change={((price/prev)-1)*100:.2f}%")
             
             close_paths[path] = closes
         
