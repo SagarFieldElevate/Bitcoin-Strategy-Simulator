@@ -39,23 +39,52 @@ class MultiFactorDataFetcher:
         
         # Search for vectors with semantic similarity to the variable name
         try:
+            # Direct pattern matching for known variables
+            variable_patterns = {
+                'GOLD': 'Gold Daily Close Price',
+                'GLD': 'Gold Daily Close Price', 
+                'XAU': 'Gold Daily Close Price',
+                'GOLD_PRICE': 'Gold Daily Close Price',
+                'WTI': 'Oil',
+                'OIL': 'Oil',
+                'CRUDE': 'Oil',
+                'SPY': 'S&P 500',
+                'SP500': 'S&P 500',
+                'VIX': 'VIX',
+                'TIPS': 'Treasury'
+            }
+            
+            variable_upper = variable_name.upper()
+            
             # Generate embedding for the variable name using OpenAI
             search_text = f"{variable_name} price data time series economic indicator"
             
-            # Search with multiple strategies to find relevant vectors
-            search_queries = [
-                [0.0] * 1536,  # Basic query
-                [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
-                [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
-                [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
-            ]
+            # For known variables like GOLD, use targeted search patterns
+            if variable_upper in variable_patterns:
+                target_name = variable_patterns[variable_upper]
+                # Use search patterns that are more likely to find specific data types
+                search_queries = [
+                    [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],  # Commodities pattern
+                    [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], # Metals pattern
+                    [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], # Precious metals
+                    [0.001 if i % 17 == 0 else 0.0 for i in range(1536)], # Alternative
+                    [0.0] * 1536,  # Fallback basic query
+                ]
+            else:
+                # Default search patterns for unknown variables
+                search_queries = [
+                    [0.0] * 1536,  # Basic query
+                    [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
+                    [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
+                    [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
+                ]
             
             all_vector_options = []
             
             for query_vector in search_queries:
                 response = intelligence_index.query(
                     vector=query_vector,
-                    top_k=30,
+                    top_k=50,  # Increase search depth
                     include_metadata=True
                 )
                 
@@ -64,8 +93,8 @@ class MultiFactorDataFetcher:
                         if hasattr(match, 'metadata') and match.metadata:
                             vector_id = match.id
                             metadata = match.metadata
-                            name = metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id)))
-                            description = metadata.get('description', metadata.get('info', ''))
+                            name = metadata.get('excel_name', metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id))))
+                            description = metadata.get('description', metadata.get('info', metadata.get('raw_text', '')))
                             
                             # Check if we already have this vector
                             if not any(v['id'] == vector_id for v in all_vector_options):
@@ -86,6 +115,16 @@ class MultiFactorDataFetcher:
             if not all_vector_options:
                 print(f"No valid vectors with metadata found for {variable_name}")
                 return None
+            
+            # Check for direct pattern matches first
+            if variable_upper in variable_patterns:
+                target_pattern = variable_patterns[variable_upper]
+                for vector in all_vector_options:
+                    excel_name = vector.get('name', '')
+                    if target_pattern.lower() in excel_name.lower():
+                        print(f"Direct match found for {variable_name}: {excel_name}")
+                        self.vector_cache[variable_name] = vector
+                        return vector
             
             # Use LLM to find the best match
             prompt = f"""Given this list of available financial data vectors, find the best match for "{variable_name}":
