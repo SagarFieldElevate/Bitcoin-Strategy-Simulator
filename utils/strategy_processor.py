@@ -51,7 +51,10 @@ Generate the `conditions` JSON:"""
             )
             
             conditions_json = response.choices[0].message.content
-            return json.loads(conditions_json)
+            if conditions_json:
+                return json.loads(conditions_json)
+            else:
+                raise ValueError("Empty response from OpenAI")
             
         except Exception as e:
             print(f"Error generating conditions: {e}")

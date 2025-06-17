@@ -320,14 +320,16 @@ else:
     st.sidebar.info("Please select a strategy to continue")
 
 # Display strategy details if selected (but not the default option)
-if selected_strategy_name != "Select a strategy..." and selected_strategy_name in strategy_lookup and strategy_lookup[selected_strategy_name]:
+if (selected_strategy_name != "Select a strategy..." and 
+    selected_strategy_name in strategy_lookup and 
+    strategy_lookup[selected_strategy_name] is not None):
+    
     selected_strategy = strategy_lookup[selected_strategy_name]
-    if selected_strategy:  # Additional null check
-        st.sidebar.subheader("Strategy Details")
-        st.sidebar.write(f"**Description:** {selected_strategy.get('description', 'N/A')}")
-        
-        # Performance metrics from metadata
-        metadata = selected_strategy.get('metadata', {})
+    st.sidebar.subheader("Strategy Details")
+    st.sidebar.write(f"**Description:** {selected_strategy.get('description', 'N/A')}")
+    
+    # Performance metrics from metadata
+    metadata = selected_strategy.get('metadata', {})
     col_a, col_b = st.sidebar.columns(2)
     with col_a:
         st.sidebar.metric("Total Return", f"{metadata.get('total_return', 0):.1f}%")
