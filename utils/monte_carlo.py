@@ -196,8 +196,13 @@ class MonteCarloSimulator:
                 processor = StrategyProcessor()
                 
                 # Execute strategy using its conditions
-                if isinstance(strategy, dict) and 'conditions' in strategy:
-                    return processor.execute_strategy_conditions(df, strategy['conditions'])
+                if isinstance(strategy, dict):
+                    if 'conditions' in strategy:
+                        # Strategy object with conditions
+                        return processor.execute_strategy_conditions(df, strategy['conditions'])
+                    else:
+                        # Direct conditions JSON from OpenAI
+                        return processor.execute_strategy_conditions(df, strategy)
                 else:
                     # Fallback to default strategy
                     return self.cemd_strategy(df)
