@@ -5,16 +5,14 @@ import numpy as np
 import pandas as pd
 from arch import arch_model
 import streamlit as st
+from .market_conditions import MarketCondition, adjust_mu_sigma_for_condition
 
 class MonteCarloSimulator:
-    def __init__(self, bitcoin_data, spread_threshold=2.0, holding_period=5, risk_percent=100.0):
+    def __init__(self, bitcoin_data):
         """
-        Initialize Monte Carlo simulator with Bitcoin data and strategy parameters
+        Initialize Monte Carlo simulator with Bitcoin data
         """
         self.df_hist = bitcoin_data.copy()
-        self.spread_threshold = spread_threshold
-        self.holding_period = holding_period
-        self.risk_percent = risk_percent
         
         # Extract price and volume data
         self.prices = self.df_hist["Close"].astype(float).values
@@ -56,12 +54,24 @@ class MonteCarloSimulator:
         # Store initial variance
         self.initial_variance = daily_ret.var() * 10000
     
-    def generate_price_paths(self, n_simulations, simulation_days, seed=42):
+    def generate_price_paths(self, n_simulations, simulation_days, market_condition=None, seed=42):
         """
-        Generate Monte Carlo price paths using GARCH+jumps model
+        Generate Monte Carlo price paths using GARCH+jumps model with market condition adjustments
         """
         MIN_PRICE = 1e-6
         rng = np.random.default_rng(seed)
+        
+        # Adjust drift and volatility for market condition
+        mu_adjusted = self.mu_daily
+        sigma_multiplier = 1.0
+        
+        if market_condition:
+            # Calculate base volatility from GARCH parameters
+            base_vol = np.sqrt(self.initial_variance) / 100
+            mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(
+                self.mu_daily, base_vol, market_condition
+            )
+            sigma_multiplier = sigma_adjusted / base_vol
         
         close_paths = np.empty((n_simulations, simulation_days + 1))
         close_paths[:, 0] = self.prices[-1]  # Start from current price
@@ -80,14 +90,14 @@ class MonteCarloSimulator:
                 
                 # Update variance using GARCH(1,1)
                 sigma2 = self.omega + self.alpha * last_ret**2 + self.beta * sigma2
-                sigma_t = np.sqrt(max(sigma2, 1e-12)) / 100
+                sigma_t = np.sqrt(max(sigma2, 1e-12)) / 100 * sigma_multiplier
                 
                 # Generate random components
                 Z = rng.standard_normal()
                 J = rng.poisson(self.jump_lambda) * rng.normal(self.jump_mu, self.jump_sigma)
                 
-                # Calculate return
-                ret = self.mu_daily - 0.5 * sigma_t**2 + sigma_t * Z + J
+                # Calculate return with market condition adjustment
+                ret = mu_adjusted - 0.5 * sigma_t**2 + sigma_t * Z + J
                 
                 # Calculate new price
                 price = prev * np.exp(ret)
@@ -128,7 +138,7 @@ class MonteCarloSimulator:
         pv = df["Close"] * df["Volume"]
         return pv.rolling(window).sum() / df["Volume"].rolling(window).sum()
     
-    def cemd_strategy(self, df):
+    def cemd_strategy(self, df, spread_threshold=2.0, holding_period=5, risk_percent=100.0):
         """
         Default CEMD (Corporate vs Retail Momentum Divergence) strategy
         """
@@ -145,14 +155,14 @@ class MonteCarloSimulator:
         rng20 = df["rng"].rolling(20).mean()
         
         # Generate signals
-        long_sig = (div > self.spread_threshold) & (df["Close"] > df["VW"]) & (df["rng"] < rng20)
-        short_sig = (div < -self.spread_threshold) & (df["Close"] < df["VW"]) & (df["rng"] < rng20)
+        long_sig = (div > spread_threshold) & (df["Close"] > df["VW"]) & (df["rng"] < rng20)
+        short_sig = (div < -spread_threshold) & (df["Close"] < df["VW"]) & (df["rng"] < rng20)
         
         # Execute strategy
         pos, days, pl = 0, 0, []
         for i in range(len(df)):
             # Exit conditions
-            if pos and (days >= self.holding_period or df.index[i].weekday() == 4):
+            if pos and (days >= holding_period or df.index[i].weekday() == 4):
                 pos = 0
                 days = 0
             
@@ -169,7 +179,7 @@ class MonteCarloSimulator:
             # Calculate return
             ret = pos * (df["Close"].iloc[i] / df["Close"].iloc[i-1] - 1) if i else 0
             ret = max(ret, -0.9999)  # Cap at -99.99%
-            pl.append(ret * (self.risk_percent / 100))
+            pl.append(ret * (risk_percent / 100))
         
         return pd.Series(pl, index=df.index)
     
@@ -195,12 +205,12 @@ class MonteCarloSimulator:
         return (1 + returns).cumprod()
     
     def run_simulation(self, n_simulations, simulation_days, selected_strategy="CEMD (Default)", 
-                      pinecone_client=None, progress_callback=None):
+                      market_condition=None, pinecone_client=None, progress_callback=None):
         """
-        Run complete Monte Carlo simulation
+        Run complete Monte Carlo simulation with market condition scenarios
         """
-        # Generate price paths
-        close_paths = self.generate_price_paths(n_simulations, simulation_days)
+        # Generate price paths with market condition adjustments
+        close_paths = self.generate_price_paths(n_simulations, simulation_days, market_condition)
         
         # Calculate strategy performance for each path
         cagr_values = []
