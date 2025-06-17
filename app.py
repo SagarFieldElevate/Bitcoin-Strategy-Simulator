@@ -58,32 +58,60 @@ def check_openai_connection():
 # Load strategies from Pinecone (simple and fast)
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def load_strategies_fast(_pinecone_client):
-    """Load strategy descriptions from Pinecone quickly"""
+    """Load all strategy descriptions from Pinecone quickly"""
     if not _pinecone_client:
         return []
     
     try:
-        # Get strategies from Pinecone
-        dummy_vector = [0.0] * 32
-        response = _pinecone_client.index.query(
-            vector=dummy_vector,
-            top_k=100,
-            include_metadata=True
-        )
-        
         strategies = []
-        if hasattr(response, 'matches'):
-            for match in response.matches:
-                if hasattr(match, 'metadata') and match.metadata:
-                    description = match.metadata.get('description', '')
-                    if description:
-                        strategies.append({
-                            'id': match.metadata.get('strategy_id', match.id),
-                            'description': description,
-                            'metadata': match.metadata
-                        })
+        existing_ids = set()
         
+        # Use multiple queries with different vectors to get all strategies
+        import random
+        query_vectors = [
+            [0.0] * 32,
+            [0.001] * 32,
+            [0.002] * 32,
+            [random.random() * 0.01 for _ in range(32)],
+            [random.random() * 0.01 for _ in range(32)],
+            [random.random() * 0.01 for _ in range(32)],
+            [float(i % 2) * 0.001 for i in range(32)],
+            [float(i % 3) * 0.001 for i in range(32)],
+            [float(i % 5) * 0.001 for i in range(32)]
+        ]
+        
+        for i, query_vector in enumerate(query_vectors):
+            response = _pinecone_client.index.query(
+                vector=query_vector,
+                top_k=100,
+                include_metadata=True
+            )
+            
+            new_strategies_count = 0
+            if hasattr(response, 'matches'):
+                for match in response.matches:
+                    if hasattr(match, 'metadata') and match.metadata:
+                        strategy_id = match.metadata.get('strategy_id', match.id)
+                        description = match.metadata.get('description', '')
+                        
+                        if description and strategy_id not in existing_ids:
+                            strategies.append({
+                                'id': strategy_id,
+                                'description': description,
+                                'metadata': match.metadata
+                            })
+                            existing_ids.add(strategy_id)
+                            new_strategies_count += 1
+            
+            print(f"Query {i+1}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
+            
+            # If we have all 254 strategies or no new ones found, stop
+            if len(strategies) >= 254 or new_strategies_count == 0:
+                break
+        
+        print(f"Total loaded strategies: {len(strategies)}")
         return strategies
+        
     except Exception as e:
         print(f"Error loading strategies: {e}")
         return []
