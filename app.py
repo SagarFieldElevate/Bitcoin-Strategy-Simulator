@@ -66,57 +66,50 @@ def load_strategies_fast(_pinecone_client):
         strategies = []
         existing_ids = set()
         
-        # Keep querying with different vectors until we get all 254 strategies
+        # Generate a much more comprehensive set of query vectors to find all 254 strategies
         import random
-        random.seed(42)  # Consistent random seed
-        query_count = 0
-        max_queries = 100  # Safety limit - increase to find all strategies
+        import math
+        random.seed(42)
         
-        while len(strategies) < 254 and query_count < max_queries:
-            # Generate different query vectors systematically
-            if query_count == 0:
-                query_vector = [0.0] * 32
-            elif query_count == 1:
-                query_vector = [0.001] * 32
-            elif query_count == 2:
-                query_vector = [0.002] * 32
-            elif query_count == 3:
-                query_vector = [-0.001] * 32
-            elif query_count == 4:
-                query_vector = [0.005] * 32
-            elif query_count < 20:
-                # More diverse pattern-based vectors
-                pattern_type = query_count % 5
-                if pattern_type == 0:
-                    query_vector = [float(i % (query_count + 1)) * 0.001 for i in range(32)]
-                elif pattern_type == 1:
-                    query_vector = [float(i % 2) * (query_count * 0.0005) for i in range(32)]
-                elif pattern_type == 2:
-                    query_vector = [float(i % 3) * (query_count * 0.0003) for i in range(32)]
-                elif pattern_type == 3:
-                    query_vector = [float(i % 7) * 0.001 for i in range(32)]
-                else:
-                    query_vector = [float((i * query_count) % 11) * 0.0001 for i in range(32)]
-            elif query_count < 50:
-                # Random vectors with different distributions
-                dist_type = query_count % 3
-                if dist_type == 0:
-                    # Gaussian distribution
-                    variance = (query_count - 19) * 0.001
-                    query_vector = [random.gauss(0, variance) for _ in range(32)]
-                elif dist_type == 1:
-                    # Uniform distribution
-                    scale = (query_count - 19) * 0.002
-                    query_vector = [random.uniform(-scale, scale) for _ in range(32)]
-                else:
-                    # Exponential distribution
-                    scale = max(0.001, (query_count - 19) * 0.0005)
-                    query_vector = [random.expovariate(1/scale) * random.choice([-1, 1]) for _ in range(32)]
-            else:
-                # High variance random vectors for remaining strategies
-                variance = 0.01 + (query_count - 49) * 0.002
-                query_vector = [random.gauss(0, variance) for _ in range(32)]
+        # Create systematic query vectors covering the entire 32-dimensional space
+        query_vectors = []
+        
+        # 1. Basic orthogonal vectors
+        for i in range(32):
+            vec = [0.0] * 32
+            vec[i] = 0.001
+            query_vectors.append(vec)
             
+        # 2. Combination vectors
+        for i in range(32):
+            for j in range(i+1, min(i+5, 32)):
+                vec = [0.0] * 32
+                vec[i] = 0.001
+                vec[j] = 0.001
+                query_vectors.append(vec)
+        
+        # 3. Pattern-based vectors
+        for step in range(1, 8):
+            for offset in range(step):
+                vec = [0.001 if (i + offset) % step == 0 else 0.0 for i in range(32)]
+                query_vectors.append(vec)
+        
+        # 4. Random vectors with different magnitudes
+        for magnitude in [0.001, 0.002, 0.005, 0.01, 0.02]:
+            for _ in range(20):
+                vec = [random.gauss(0, magnitude) for _ in range(32)]
+                query_vectors.append(vec)
+        
+        # 5. Dense vectors with different patterns
+        for density in [0.1, 0.3, 0.5, 0.7, 0.9]:
+            for _ in range(10):
+                vec = [random.random() * 0.01 if random.random() < density else 0.0 for _ in range(32)]
+                query_vectors.append(vec)
+        
+        print(f"Generated {len(query_vectors)} query vectors to ensure complete coverage")
+        
+        # Query with each vector
+        for i, query_vector in enumerate(query_vectors):
             response = _pinecone_client.index.query(
                 vector=query_vector,
                 top_k=100,
@@ -139,14 +132,14 @@ def load_strategies_fast(_pinecone_client):
                             existing_ids.add(strategy_id)
                             new_strategies_count += 1
             
-            query_count += 1
-            print(f"Query {query_count}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
+            if new_strategies_count > 0:
+                print(f"Query {i+1}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
             
-            # If no new strategies found in last few queries, we've likely found them all
-            if new_strategies_count == 0 and query_count > 5:
+            # Stop if we've found all 254 strategies
+            if len(strategies) >= 254:
                 break
         
-        print(f"Total loaded strategies: {len(strategies)}")
+        print(f"Final total: {len(strategies)} strategies loaded")
         return strategies
         
     except Exception as e:
