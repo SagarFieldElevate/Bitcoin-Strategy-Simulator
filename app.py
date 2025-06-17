@@ -274,6 +274,14 @@ else:
 # Strategy search and filtering
 st.sidebar.subheader("Strategy Selection")
 
+# Data integrity filter
+data_filter = st.sidebar.radio(
+    "Data Integrity Filter:",
+    ["Safe BTC-only (56 strategies)", "All strategies (254)", "Risky multi-factor (157)"],
+    index=0,
+    help="Safe strategies use only verified authentic Bitcoin data"
+)
+
 # Search functionality
 search_term = st.sidebar.text_input(
     "Search strategies", 
@@ -281,24 +289,58 @@ search_term = st.sidebar.text_input(
     help="Search through all strategies by keywords"
 )
 
-# Filter strategies based on search
+# Apply data integrity filter
 filtered_strategies = strategies if strategies else []
-if search_term and strategies:
-    filtered_strategies = []
+
+if data_filter.startswith("Safe BTC-only") and strategies:
+    # Filter to only BTC-only strategies
+    safe_strategies = []
+    router = SimulationRouter()
+    
+    for strategy in strategies:
+        try:
+            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
+            if simulation_mode == 'btc_only':
+                safe_strategies.append(strategy)
+        except:
+            continue
+    
+    filtered_strategies = safe_strategies
+    st.sidebar.success(f"✅ {len(filtered_strategies)} safe BTC-only strategies")
+
+elif data_filter.startswith("Risky multi-factor") and strategies:
+    # Filter to multi-factor strategies
+    risky_strategies = []
+    router = SimulationRouter()
+    
+    for strategy in strategies:
+        try:
+            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
+            if simulation_mode == 'multi_factor':
+                risky_strategies.append(strategy)
+        except:
+            continue
+    
+    filtered_strategies = risky_strategies
+    st.sidebar.warning(f"⚠️ {len(filtered_strategies)} strategies require macro data")
+
+# Apply search filter
+if search_term and filtered_strategies:
+    search_filtered = []
     search_lower = search_term.lower()
-    for s in strategies:
-        # Search in description and strategy type
+    for s in filtered_strategies:
         desc_match = search_lower in s['description'].lower()
         type_match = search_lower in s.get('metadata', {}).get('strategy_type', '').lower()
         
         if desc_match or type_match:
-            filtered_strategies.append(s)
+            search_filtered.append(s)
+    
+    filtered_strategies = search_filtered
     
     if filtered_strategies:
         st.sidebar.info(f"Found {len(filtered_strategies)} matches")
     else:
         st.sidebar.warning("No matches found")
-        filtered_strategies = strategies
 
 # Strategy type filter
 if filtered_strategies:
@@ -553,6 +595,21 @@ if st.session_state.bitcoin_data is not None:
                             router = SimulationRouter()
                             simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
                             required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
+                            
+                            # CRITICAL DATA INTEGRITY CHECK
+                            if simulation_mode == 'multi_factor':
+                                macro_vars = [v for v in required_variables if v != 'BTC']
+                                if macro_vars:
+                                    overall_progress.progress(100, text="Simulation blocked - data integrity violation")
+                                    status_placeholder.error("🚨 HEDGE FUND DATA INTEGRITY VIOLATION")
+                                    st.error("**CRITICAL: Strategy requires unavailable macro data**")
+                                    st.error(f"Required variables: {', '.join(macro_vars)}")
+                                    st.error("**Audit Results:**")
+                                    st.error("- Only 56/254 strategies (26.3%) have authentic data")
+                                    st.error("- 157 strategies require macro variables not available")
+                                    st.error("- Using synthetic data would compromise hedge fund results")
+                                    st.error("**Action Required:** Select a BTC-only strategy from the 56 verified safe strategies")
+                                    st.stop()
                             
                             # Store in session state
                             st.session_state.generated_strategy = processed_strategy
