@@ -66,21 +66,57 @@ def load_strategies_fast(_pinecone_client):
         strategies = []
         existing_ids = set()
         
-        # Use multiple queries with different vectors to get all strategies
+        # Keep querying with different vectors until we get all 254 strategies
         import random
-        query_vectors = [
-            [0.0] * 32,
-            [0.001] * 32,
-            [0.002] * 32,
-            [random.random() * 0.01 for _ in range(32)],
-            [random.random() * 0.01 for _ in range(32)],
-            [random.random() * 0.01 for _ in range(32)],
-            [float(i % 2) * 0.001 for i in range(32)],
-            [float(i % 3) * 0.001 for i in range(32)],
-            [float(i % 5) * 0.001 for i in range(32)]
-        ]
+        random.seed(42)  # Consistent random seed
+        query_count = 0
+        max_queries = 100  # Safety limit - increase to find all strategies
         
-        for i, query_vector in enumerate(query_vectors):
+        while len(strategies) < 254 and query_count < max_queries:
+            # Generate different query vectors systematically
+            if query_count == 0:
+                query_vector = [0.0] * 32
+            elif query_count == 1:
+                query_vector = [0.001] * 32
+            elif query_count == 2:
+                query_vector = [0.002] * 32
+            elif query_count == 3:
+                query_vector = [-0.001] * 32
+            elif query_count == 4:
+                query_vector = [0.005] * 32
+            elif query_count < 20:
+                # More diverse pattern-based vectors
+                pattern_type = query_count % 5
+                if pattern_type == 0:
+                    query_vector = [float(i % (query_count + 1)) * 0.001 for i in range(32)]
+                elif pattern_type == 1:
+                    query_vector = [float(i % 2) * (query_count * 0.0005) for i in range(32)]
+                elif pattern_type == 2:
+                    query_vector = [float(i % 3) * (query_count * 0.0003) for i in range(32)]
+                elif pattern_type == 3:
+                    query_vector = [float(i % 7) * 0.001 for i in range(32)]
+                else:
+                    query_vector = [float((i * query_count) % 11) * 0.0001 for i in range(32)]
+            elif query_count < 50:
+                # Random vectors with different distributions
+                dist_type = query_count % 3
+                if dist_type == 0:
+                    # Gaussian distribution
+                    variance = (query_count - 19) * 0.001
+                    query_vector = [random.gauss(0, variance) for _ in range(32)]
+                elif dist_type == 1:
+                    # Uniform distribution
+                    scale = (query_count - 19) * 0.002
+                    query_vector = [random.uniform(-scale, scale) for _ in range(32)]
+                else:
+                    # Exponential distribution
+                    scale = max(0.001, (query_count - 19) * 0.0005)
+                    query_vector = [random.expovariate(1/scale) * random.choice([-1, 1]) for _ in range(32)]
+            else:
+                # High variance random vectors for remaining strategies
+                variance = 0.01 + (query_count - 49) * 0.002
+                query_vector = [random.gauss(0, variance) for _ in range(32)]
+            
             response = _pinecone_client.index.query(
                 vector=query_vector,
                 top_k=100,
@@ -103,10 +139,11 @@ def load_strategies_fast(_pinecone_client):
                             existing_ids.add(strategy_id)
                             new_strategies_count += 1
             
-            print(f"Query {i+1}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
+            query_count += 1
+            print(f"Query {query_count}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
             
-            # If we have all 254 strategies or no new ones found, stop
-            if len(strategies) >= 254 or new_strategies_count == 0:
+            # If no new strategies found in last few queries, we've likely found them all
+            if new_strategies_count == 0 and query_count > 5:
                 break
         
         print(f"Total loaded strategies: {len(strategies)}")
