@@ -1,0 +1,178 @@
+# cemd_mc_with_garch_and_jumps.py
+# ------------------------------------------------------------
+# pip install pandas numpy matplotlib arch
+# python cemd_mc_with_garch_and_jumps.py
+# ------------------------------------------------------------
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from arch import arch_model
+
+# ========= 1. File location =========
+CSV_PATH = Path("btc_daily_2015_2025.csv")
+
+# ========= 2. Parameters =========
+DAYS_FWD       = 365
+N_PATHS        = 20_000
+SEED           = 42
+SPREAD_THRESH  = 2.0
+HOLDING_PERIOD = 5
+RISK_PERCENT   = 100.0
+
+# ========= 3. Load & clean CSV =========
+with CSV_PATH.open() as f:
+    skip_first = f.readline().split(",")[0] != "Date"
+
+df_hist = (
+    pd.read_csv(CSV_PATH, skiprows=1 if skip_first else 0, parse_dates=["Date"])
+      .set_index("Date")
+)
+for col in ["Open", "High", "Low", "Close", "Adj Close", "Volume"]:
+    df_hist[col] = pd.to_numeric(df_hist[col], errors="coerce")
+df_hist = df_hist.dropna(subset=["Close"])
+
+prices   = df_hist["Close"].astype(float).values
+vol_hist = df_hist["Volume"].replace(0, np.nan).dropna().astype(float).values
+last_date = df_hist.index[-1]
+
+# ========= 4. Calibrate μ, jumps, GARCH params =========
+daily_ret = np.diff(np.log(prices))
+mu_daily  = daily_ret.mean()
+
+# Jump calibration
+sigma_day = daily_ret.std()
+jump_mask = np.abs(daily_ret) > 6 * sigma_day
+lam       = jump_mask.mean()
+jump_mu   = daily_ret[jump_mask].mean() if jump_mask.any() else 0.0
+jump_sig  = daily_ret[jump_mask].std()  if jump_mask.any() else 0.0
+print(f"Calibrated μ={mu_daily:.6f}, σ={sigma_day:.4f}, λ={lam:.4f}")
+
+# Fit GARCH(1,1) to log-returns
+from arch import arch_model
+garch_mod = arch_model(daily_ret*100, p=1, q=1, mean='zero')  # *100 for percent returns
+garch_fit = garch_mod.fit(disp="off")
+omega, alpha, beta = garch_fit.params["omega"], garch_fit.params["alpha[1]"], garch_fit.params["beta[1]"]
+print(f"GARCH(1,1): omega={omega:.4f}, alpha={alpha:.4f}, beta={beta:.4f}")
+
+rng = np.random.default_rng(SEED)
+
+# ========= 5. Monte-Carlo close paths with GARCH(1,1) and jumps =========
+def mc_closes_garch(S0, days, n):
+    MIN_PRICE = 1e-6  # Set a floor to prevent log(0)
+    clos = np.empty((n, days+1))
+    clos[:, 0] = S0
+    for path in range(n):
+        sigma2 = daily_ret.var()*10000
+        closes = [S0]
+        for t in range(1, days+1):
+            # Protect against zero or negative prices
+            prev = max(closes[-1], MIN_PRICE)
+            prev2 = max(closes[-2], MIN_PRICE) if t > 1 else prev
+            last_ret = np.log(prev / prev2)*100 if t > 1 else 0
+            sigma2 = omega + alpha * last_ret**2 + beta * sigma2
+            sigma_t = np.sqrt(max(sigma2, 1e-12)) / 100
+            Z = rng.standard_normal()
+            J = rng.poisson(lam) * rng.normal(jump_mu, jump_sig)
+            ret = mu_daily - 0.5*sigma_t**2 + sigma_t*Z + J
+            price = prev * np.exp(ret)
+            # Avoid zero/negative prices
+            closes.append(max(price, MIN_PRICE))
+        clos[path] = closes
+    return clos
+
+
+# ========= 6. Synthesize OHLCV from closes =========
+def synth_ohlcv(close_path, start_date):
+    dates  = pd.date_range(start=start_date, periods=len(close_path), freq="D")
+    closes = pd.Series(close_path, index=dates, name="Close")
+    opens  = closes.shift(1).fillna(closes.iloc[0])
+    rpct   = closes.pct_change().abs().fillna(0)
+    high   = closes * (1 + 0.5*rpct)
+    low    = closes * (1 - 0.5*rpct)
+    vol    = pd.Series(rng.choice(vol_hist, size=len(dates)), index=dates)
+    return pd.DataFrame({"Open": opens, "High": high, "Low": low,
+                         "Close": closes, "Volume": vol})
+
+# ========= 7. Strategy (Change depending on strategy to fix) =========
+def vwap(df, w):
+    pv = df["Close"] * df["Volume"]
+    return pv.rolling(w).sum() / df["Volume"].rolling(w).sum()
+
+def cemd(df):
+    df = df.copy()
+    df["VW"]  = vwap(df, 20)
+    df["rng"] = (df["High"]-df["Low"]) / df["Close"] * 100
+    mom       = (df["Close"]-df["Open"]) / df["Open"] * 100
+    press     = df["Volume"] * mom
+    inst      = press.rolling(10).mean()
+    retail    = press.rolling(30).mean()
+    div       = (inst-retail) / (retail.abs()+1e-4) * 100
+    rng20     = df["rng"].rolling(20).mean()
+
+    long_sig  = (div> SPREAD_THRESH) & (df["Close"]>df["VW"]) & (df["rng"]<rng20)
+    short_sig = (div<-SPREAD_THRESH) & (df["Close"]<df["VW"]) & (df["rng"]<rng20)
+
+    pos, days, pl = 0, 0, []
+    for i in range(len(df)):
+        if pos and (days>=HOLDING_PERIOD or df.index[i].weekday()==4):
+            pos = 0; days = 0
+        if not pos:
+            if   long_sig.iloc[i]:  pos = 1
+            elif short_sig.iloc[i]: pos = -1
+        if pos: days += 1
+        ret = pos*(df["Close"].iloc[i]/df["Close"].iloc[i-1]-1) if i else 0
+        ret = max(ret, -0.9999)              # cap at –99.99 %
+        pl.append(ret*(RISK_PERCENT/100))
+    return pd.Series(pl, index=df.index)
+
+def equity(p): return (1+p).cumprod()
+
+# ========= 8. Run simulation & collect metrics =========
+close_paths = mc_closes_garch(prices[-1], DAYS_FWD, N_PATHS)
+
+cagr, dd = [], []
+for path in close_paths:
+    eq = equity(cemd(synth_ohlcv(path, last_date + pd.Timedelta(days=1))))
+    eq_end = eq.iloc[-1]
+    cagr.append(-100.0 if eq_end<=0 or np.isnan(eq_end)
+                else (eq_end**(365/len(eq))-1)*100)
+    dd.append((eq/eq.cummax()-1).min()*100)
+
+print("\n=====  CEMD – Monte-Carlo Robustness  (GBM + GARCH + jumps) =====")
+print(f"Median CAGR        : {np.median(cagr):8.2f} %")
+print(f"Worst-decile CAGR  : {np.percentile(cagr,10):8.2f} %")
+print(f"Median Max-Drawdown: {np.median(dd):8.2f} %")
+
+# ========= 9. Visualisations =========
+days_axis = np.arange(DAYS_FWD+1)
+percentiles = np.percentile(close_paths, [5,25,50,75,95], axis=0)
+mean_path   = close_paths.mean(axis=0)
+
+plt.figure(figsize=(12,6))
+plt.fill_between(days_axis, percentiles[0], percentiles[4],
+                 color='lightgray', alpha=0.4, label='5–95 % band')
+plt.fill_between(days_axis, percentiles[1], percentiles[3],
+                 color='gray', alpha=0.4, label='25–75 % band')
+plt.plot(days_axis, mean_path,  color='blue',  lw=2, label='Mean path')
+plt.plot(days_axis, percentiles[2], color='black', lw=2, ls='--', label='Median')
+plt.title("Monte-Carlo Bitcoin price paths – Fan chart (GBM + GARCH + jumps)")
+plt.xlabel("Days ahead"); plt.ylabel("Price"); plt.legend(); plt.grid(alpha=0.3)
+plt.show()
+
+# --- spaghetti plot of 50 random paths ---
+plt.figure(figsize=(12,6))
+sample_idx = np.random.choice(close_paths.shape[0], size=50, replace=False)
+for idx in sample_idx:
+    plt.plot(days_axis, close_paths[idx], alpha=0.3, lw=0.8)
+plt.title("Sample of individual Monte-Carlo paths (50 shown)")
+plt.xlabel("Days ahead"); plt.ylabel("Price"); plt.grid(alpha=0.3)
+plt.show()
+
+# --- histogram of terminal prices ---
+plt.figure(figsize=(10,5))
+plt.hist(close_paths[:, -1], bins=50, color='steelblue',
+         edgecolor='black', alpha=0.7)
+plt.title("Distribution of simulated 1-year terminal prices")
+plt.xlabel("Terminal price"); plt.ylabel("Frequency"); plt.grid(alpha=0.3)
+plt.show()
