@@ -42,35 +42,48 @@ class MultiFactorDataFetcher:
             # Generate embedding for the variable name using OpenAI
             search_text = f"{variable_name} price data time series economic indicator"
             
-            # Get sample vectors to understand the data structure
-            dummy_vector = [0.0] * 1536  # intelligence-main uses 1536 dimensions
-            response = intelligence_index.query(
-                vector=dummy_vector,
-                top_k=50,
-                include_metadata=True
-            )
+            # Search with multiple strategies to find relevant vectors
+            search_queries = [
+                [0.0] * 1536,  # Basic query
+                [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
+                [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
+                [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
+            ]
+            
+            all_vector_options = []
+            
+            for query_vector in search_queries:
+                response = intelligence_index.query(
+                    vector=query_vector,
+                    top_k=30,
+                    include_metadata=True
+                )
+                
+                if hasattr(response, 'matches') and response.matches:
+                    for match in response.matches:
+                        if hasattr(match, 'metadata') and match.metadata:
+                            vector_id = match.id
+                            metadata = match.metadata
+                            name = metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id)))
+                            description = metadata.get('description', metadata.get('info', ''))
+                            
+                            # Check if we already have this vector
+                            if not any(v['id'] == vector_id for v in all_vector_options):
+                                all_vector_options.append({
+                                    'id': vector_id,
+                                    'name': name,
+                                    'description': description,
+                                    'metadata': metadata
+                                })
+                
+                if len(all_vector_options) >= 100:  # Enough samples
+                    break
             
             if not hasattr(response, 'matches') or not response.matches:
                 print(f"No vectors found in intelligence-main for {variable_name}")
                 return None
             
-            # Collect vector descriptions for LLM analysis
-            vector_options = []
-            for match in response.matches[:20]:  # Analyze top 20
-                if hasattr(match, 'metadata') and match.metadata:
-                    vector_id = match.id
-                    metadata = match.metadata
-                    name = metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id)))
-                    description = metadata.get('description', metadata.get('info', 'No description'))
-                    
-                    vector_options.append({
-                        'id': vector_id,
-                        'name': name,
-                        'description': description,
-                        'metadata': metadata
-                    })
-            
-            if not vector_options:
+            if not all_vector_options:
                 print(f"No valid vectors with metadata found for {variable_name}")
                 return None
             
@@ -78,7 +91,7 @@ class MultiFactorDataFetcher:
             prompt = f"""Given this list of available financial data vectors, find the best match for "{variable_name}":
 
 Available vectors:
-{json.dumps(vector_options[:10], indent=2)}
+{json.dumps(all_vector_options[:10], indent=2)}
 
 Find the vector that best matches "{variable_name}". Look for:
 - WTI/Oil: crude oil, petroleum, energy commodities
@@ -117,7 +130,7 @@ Respond with JSON:
             
             if confidence >= 0.6:  # Only use if confident
                 # Find the full vector data
-                matched_vector = next((v for v in vector_options if v['id'] == best_match_id), None)
+                matched_vector = next((v for v in all_vector_options if v['id'] == best_match_id), None)
                 if matched_vector:
                     self.vector_cache[variable_name] = matched_vector
                     return matched_vector
