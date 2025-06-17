@@ -151,6 +151,10 @@ if 'bitcoin_data' not in st.session_state:
     st.session_state.bitcoin_data = None
 if 'simulation_results' not in st.session_state:
     st.session_state.simulation_results = None
+if 'generated_strategy' not in st.session_state:
+    st.session_state.generated_strategy = None
+if 'current_strategy_name' not in st.session_state:
+    st.session_state.current_strategy_name = None
 
 # Initialize API connections
 pinecone_client, pinecone_status = init_pinecone()
@@ -263,8 +267,8 @@ else:
     st.sidebar.warning("Pinecone connection required to load strategies")
 
 # Strategy selection dropdown
-strategy_options = ["CEMD (Default)"]
-strategy_lookup = {"CEMD (Default)": None}
+strategy_options = ["Select a strategy..."]
+strategy_lookup = {"Select a strategy...": None}
 
 if strategies:
     for strategy in strategies:
@@ -279,10 +283,45 @@ selected_strategy_name = st.sidebar.selectbox(
     help="Choose a strategy to simulate"
 )
 
-selected_strategy = strategy_lookup[selected_strategy_name]
+# Strategy generation section
+# Check if strategy has changed
+if st.session_state.current_strategy_name != selected_strategy_name:
+    st.session_state.generated_strategy = None
+    st.session_state.current_strategy_name = selected_strategy_name
 
-# Display strategy details if selected
-if selected_strategy:
+strategy_generated = st.session_state.generated_strategy is not None
+processed_strategy = st.session_state.generated_strategy
+
+if selected_strategy_name != "Select a strategy...":
+    if st.sidebar.button("Generate Strategy Code", type="primary"):
+        with st.spinner("Processing strategy with AI..."):
+            selected_strategy_data = strategy_lookup[selected_strategy_name]
+            
+            if selected_strategy_data:
+                # Use OpenAI to process the strategy
+                from utils.strategy_processor import StrategyProcessor
+                processor = StrategyProcessor()
+                processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
+                
+                # Store in session state
+                st.session_state.generated_strategy = processed_strategy
+                st.session_state.current_strategy_name = selected_strategy_name
+                strategy_generated = True
+                st.sidebar.success("Strategy code generated!")
+            else:
+                st.sidebar.error("Could not find strategy data")
+    
+    # Show generation status
+    if strategy_generated:
+        st.sidebar.success("✅ Strategy code ready for simulation")
+    else:
+        st.sidebar.warning("⚠️ Click 'Generate Strategy Code' to prepare for simulation")
+else:
+    st.sidebar.info("Please select a strategy to continue")
+
+# Display strategy details if selected (but not the default option)
+if selected_strategy_name != "Select a strategy..." and selected_strategy_name in strategy_lookup and strategy_lookup[selected_strategy_name]:
+    selected_strategy = strategy_lookup[selected_strategy_name]
     st.sidebar.subheader("Strategy Details")
     st.sidebar.write(f"**Description:** {selected_strategy['description']}")
     
@@ -377,28 +416,34 @@ if st.session_state.bitcoin_data is not None:
     col_sim1, col_sim2 = st.columns([3, 1])
     
     with col_sim1:
-        if st.button("Run Monte Carlo Simulation", type="primary"):
-            with st.spinner(f"Running {n_simulations:,} simulations over {simulation_days} days..."):
-                try:
-                    # Initialize Monte Carlo simulator
-                    simulator = MonteCarloSimulator(st.session_state.bitcoin_data)
-                    
-                    # Run simulation with market condition
-                    progress_bar = st.progress(0)
-                    
-                    results = simulator.run_simulation(
-                        n_simulations=n_simulations,
-                        simulation_days=simulation_days,
-                        selected_strategy=selected_strategy,
-                        market_condition=selected_market_condition,
-                        progress_callback=lambda p: progress_bar.progress(p)
-                    )
-                    
-                    st.session_state.simulation_results = results
-                    st.success("Simulation completed successfully!")
-                    
-                except Exception as e:
-                    st.error(f"Error running simulation: {str(e)}")
+        # Check if strategy has been generated
+        if selected_strategy_name == "Select a strategy...":
+            st.info("Please select a strategy and generate its code before running simulation")
+        elif not strategy_generated and selected_strategy_name != "Select a strategy...":
+            st.info("Please click 'Generate Strategy Code' button before running simulation")
+        else:
+            if st.button("Run Monte Carlo Simulation", type="primary"):
+                with st.spinner(f"Running {n_simulations:,} simulations over {simulation_days} days..."):
+                    try:
+                        # Initialize Monte Carlo simulator
+                        simulator = MonteCarloSimulator(st.session_state.bitcoin_data)
+                        
+                        # Run simulation with processed strategy
+                        progress_bar = st.progress(0)
+                        
+                        results = simulator.run_simulation(
+                            n_simulations=n_simulations,
+                            simulation_days=simulation_days,
+                            selected_strategy=processed_strategy,  # Use the AI-generated strategy
+                            market_condition=selected_market_condition,
+                            progress_callback=lambda p: progress_bar.progress(p)
+                        )
+                        
+                        st.session_state.simulation_results = results
+                        st.success("Simulation completed successfully!")
+                        
+                    except Exception as e:
+                        st.error(f"Error running simulation: {str(e)}")
     
     with col_sim2:
         if st.session_state.simulation_results is not None:
