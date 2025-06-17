@@ -254,14 +254,19 @@ Respond with JSON:
         try:
             intelligence_index = self.pinecone_client.pc.Index('intelligence-main')
             
-            # Comprehensive search patterns that work for gold
+            # Comprehensive search patterns to find all gold vectors
             search_patterns = [
+                [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],
+                [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],
                 [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],
+                [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],
                 [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], 
                 [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], 
                 [0.001 if i % 17 == 0 else 0.0 for i in range(1536)],
                 [0.001 if i % 19 == 0 else 0.0 for i in range(1536)],
                 [0.001 if i % 23 == 0 else 0.0 for i in range(1536)],
+                [0.001 if i % 29 == 0 else 0.0 for i in range(1536)],
+                [0.0] * 1536,  # Also try zero vector
             ]
             
             all_gold_data = []
@@ -342,7 +347,33 @@ Respond with JSON:
                     print(f"Error fetching Bitcoin data: {e}")
                 continue
             
-            # Find matching vector in intelligence-main
+            # Special handling for GOLD variables
+            if var.upper() in ['GOLD', 'GLD', 'XAU']:
+                print(f"Fetching {var} using direct gold extraction...")
+                try:
+                    gold_data = self.fetch_gold_data_direct()
+                    if gold_data is not None and len(gold_data) > 0:
+                        # Filter by date range
+                        start_dt = pd.to_datetime(start_date)
+                        end_dt = pd.to_datetime(end_date)
+                        
+                        filtered_data = gold_data[
+                            (gold_data.index >= start_dt) & 
+                            (gold_data.index <= end_dt)
+                        ]
+                        
+                        if len(filtered_data) > 0:
+                            data_frames[var] = filtered_data
+                            print(f"Successfully fetched {var}: {len(filtered_data)} days")
+                        else:
+                            print(f"No gold data in date range for {var}")
+                    else:
+                        print(f"Could not extract gold data for {var}")
+                except Exception as e:
+                    print(f"Error fetching gold data for {var}: {e}")
+                continue
+            
+            # Find matching vector in intelligence-main for other variables
             print(f"Finding vector for {var}...")
             vector_info = self.find_vector_for_variable(var)
             
