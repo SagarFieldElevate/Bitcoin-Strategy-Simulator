@@ -73,65 +73,115 @@ Generate the `conditions` JSON:"""
                 "depends_on": strategy_metadata.get('excel_names', [])
             }
     
-    def process_all_strategies(self, pinecone_client, max_strategies=20):
+    def process_all_strategies(self, pinecone_client, max_strategies=None):
         """
-        Process strategies in Pinecone to generate conditions
+        Process all strategies in Pinecone to generate conditions
         """
         if not pinecone_client or not pinecone_client.is_connected():
             return []
         
         try:
-            # Get strategies from Pinecone (limited number for performance)
+            processed_strategies = []
+            
+            # Get all strategies with pagination
             dummy_vector = [0.0] * 32
+            
+            # First query to get total count and initial batch
             response = pinecone_client.index.query(
                 vector=dummy_vector,
-                top_k=max_strategies,  # Limit strategies for performance
+                top_k=100,  # Maximum per query
                 include_metadata=True
             )
             
-            processed_strategies = []
-            
+            batch_count = 1
             if hasattr(response, 'matches'):
                 for match in response.matches:
                     if hasattr(match, 'metadata') and match.metadata:
-                        metadata = match.metadata
+                        strategy = self._process_single_strategy(match)
+                        if strategy:
+                            processed_strategies.append(strategy)
+                
+                print(f"Processed batch {batch_count}: {len(response.matches)} strategies")
+                
+                # Continue with additional queries if we have more strategies
+                # Since Pinecone doesn't have perfect pagination, we'll use different dummy vectors
+                # to get different subsets of strategies
+                for offset in range(100, 254, 100):
+                    if max_strategies and len(processed_strategies) >= max_strategies:
+                        break
                         
-                        # Generate conditions if empty
-                        conditions_str = metadata.get('conditions', '{}')
-                        if not conditions_str or conditions_str == '{}':
-                            conditions = self.generate_conditions(metadata)
-                            metadata['conditions'] = json.dumps(conditions)
-                        else:
-                            # Parse existing conditions
-                            try:
-                                conditions = json.loads(conditions_str)
-                            except:
-                                conditions = self.generate_conditions(metadata)
-                                metadata['conditions'] = json.dumps(conditions)
-                        
-                        # Create processed strategy object
-                        strategy = {
-                            'id': metadata.get('strategy_id', match.id),
-                            'description': metadata.get('description', ''),
-                            'conditions': conditions,
-                            'performance': {
-                                'total_return': metadata.get('total_return', 0),
-                                'sharpe_ratio': metadata.get('sharpe_ratio', 0),
-                                'max_drawdown': metadata.get('max_drawdown', 0),
-                                'success_rate': metadata.get('success_rate', 0),
-                                'total_trades': metadata.get('total_trades', 0),
-                                'quality_score': metadata.get('quality_score', 0),
-                                'risk_score': metadata.get('risk_score', 0)
-                            },
-                            'metadata': metadata
-                        }
-                        processed_strategies.append(strategy)
+                    # Use slightly different vector to get different results
+                    offset_vector = [float(i % 2) * 0.001 for i in range(32)]
+                    response = pinecone_client.index.query(
+                        vector=offset_vector,
+                        top_k=100,
+                        include_metadata=True
+                    )
+                    
+                    batch_count += 1
+                    new_strategies = 0
+                    existing_ids = {s['id'] for s in processed_strategies}
+                    
+                    if hasattr(response, 'matches'):
+                        for match in response.matches:
+                            if hasattr(match, 'metadata') and match.metadata:
+                                strategy_id = match.metadata.get('strategy_id', match.id)
+                                if strategy_id not in existing_ids:
+                                    strategy = self._process_single_strategy(match)
+                                    if strategy:
+                                        processed_strategies.append(strategy)
+                                        existing_ids.add(strategy_id)
+                                        new_strategies += 1
+                    
+                    print(f"Processed batch {batch_count}: {new_strategies} new strategies")
+                    
+                    if new_strategies == 0:  # No more new strategies found
+                        break
             
+            print(f"Total processed strategies: {len(processed_strategies)}")
             return processed_strategies
             
         except Exception as e:
             print(f"Error processing strategies: {e}")
             return []
+    
+    def _process_single_strategy(self, match):
+        """Process a single strategy match from Pinecone"""
+        try:
+            metadata = match.metadata
+            
+            # Generate conditions if empty
+            conditions_str = metadata.get('conditions', '{}')
+            if not conditions_str or conditions_str == '{}':
+                conditions = self.generate_conditions(metadata)
+            else:
+                # Parse existing conditions
+                try:
+                    conditions = json.loads(conditions_str)
+                except:
+                    conditions = self.generate_conditions(metadata)
+            
+            # Create processed strategy object
+            strategy = {
+                'id': metadata.get('strategy_id', match.id),
+                'description': metadata.get('description', ''),
+                'conditions': conditions,
+                'performance': {
+                    'total_return': metadata.get('total_return', 0),
+                    'sharpe_ratio': metadata.get('sharpe_ratio', 0),
+                    'max_drawdown': metadata.get('max_drawdown', 0),
+                    'success_rate': metadata.get('success_rate', 0),
+                    'total_trades': metadata.get('total_trades', 0),
+                    'quality_score': metadata.get('quality_score', 0),
+                    'risk_score': metadata.get('risk_score', 0)
+                },
+                'metadata': metadata
+            }
+            return strategy
+            
+        except Exception as e:
+            print(f"Error processing single strategy: {e}")
+            return None
     
     def execute_strategy_conditions(self, df, conditions):
         """
