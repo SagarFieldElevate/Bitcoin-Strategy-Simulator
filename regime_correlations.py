@@ -5,37 +5,37 @@ These correlations reflect how assets typically behave together during various m
 
 # Daily frequency variables from the screenshot (as set for efficient lookup)
 DAILY_VARIABLES = {
-    "BITCOIN DAILY CLOSE PRICE",
+    "Bitcoin Daily Close Price",
     "GOLD DAILY CLOSE PRICE", 
-    "WTI CRUDE OIL PRICE",
+    "WTI Crude Oil Price (USD/Barrel)",
     "SPY DAILY CLOSE PRICE",
-    "QQQ DAILY CLOSE PRICE",
-    "10-YEAR TREASURY YIELD",
-    "10-YEAR TIPS YIELD",
-    "5-YEAR TIPS YIELD", 
-    "20-YEAR TIPS YIELD",
-    "30-YEAR TIPS YIELD",
+    "QQQ Daily Close Price",
+    "10-Year Treasury Yield (%)",
+    "10-Year TIPS Yield (%)",
+    "5-Year TIPS Yield (%)", 
+    "20-Year TIPS Yield (%)",
+    "30-Year TIPS Yield (%)",
     "TREASURY_YIELD",
     "COINGECKO ETH DAILY VOLUME",
-    "DEFILLAMA DEX HISTORICAL VOLUME",
+    "DefiLlama DEX Historical Volume",
     "FEAR & GREED INDEX"
 }
 
 # Mapping from full names to short codes for correlation matrices
 VARIABLE_NAME_MAPPING = {
-    "BITCOIN DAILY CLOSE PRICE": "BTC",
+    "Bitcoin Daily Close Price": "BTC",
     "GOLD DAILY CLOSE PRICE": "GOLD",
-    "WTI CRUDE OIL PRICE": "WTI", 
+    "WTI Crude Oil Price (USD/Barrel)": "WTI", 
     "SPY DAILY CLOSE PRICE": "SPY",
-    "QQQ DAILY CLOSE PRICE": "QQQ",
-    "10-YEAR TREASURY YIELD": "TREASURY_10Y",
-    "10-YEAR TIPS YIELD": "TIPS_10Y",
-    "5-YEAR TIPS YIELD": "TIPS_5Y",
-    "20-YEAR TIPS YIELD": "TIPS_20Y", 
-    "30-YEAR TIPS YIELD": "TIPS_30Y",
+    "QQQ Daily Close Price": "QQQ",
+    "10-Year Treasury Yield (%)": "TREASURY_10Y",
+    "10-Year TIPS Yield (%)": "TIPS_10Y",
+    "5-Year TIPS Yield (%)": "TIPS_5Y",
+    "20-Year TIPS Yield (%)": "TIPS_20Y", 
+    "30-Year TIPS Yield (%)": "TIPS_30Y",
     "TREASURY_YIELD": "TREASURY_10Y",  # Map to same as 10-year
     "COINGECKO ETH DAILY VOLUME": "ETH_VOLUME",
-    "DEFILLAMA DEX HISTORICAL VOLUME": "DEX_VOLUME",
+    "DefiLlama DEX Historical Volume": "DEX_VOLUME",
     "FEAR & GREED INDEX": "FEAR_GREED"
 }
 
