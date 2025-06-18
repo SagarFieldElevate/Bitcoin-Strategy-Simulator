@@ -13,7 +13,8 @@ class MultiFactorDataFetcher:
     def __init__(self, pinecone_client=None):
         """Initialize the multi-factor data fetcher with enhanced discovery capabilities"""
         self.pinecone_client = pinecone_client
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        openai_key = os.getenv("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_key) if openai_key else None
         self.intelligence_index_name = "intelligence-main"
         
         # Cache for found vectors to avoid repeated LLM calls
@@ -61,9 +62,9 @@ class MultiFactorDataFetcher:
     
     def find_vector_for_variable_enhanced(self, variable_name):
         """
-        Enhanced LLM-powered variable discovery with comprehensive search strategies
+        Simplified enhanced variable discovery
         """
-        if not self.pinecone_client or not self.pinecone_client.pc:
+        if not self.pinecone_client:
             print(f"No Pinecone client available for {variable_name}")
             return None
         
@@ -74,223 +75,73 @@ class MultiFactorDataFetcher:
             return self.vector_cache[variable_upper]
         
         try:
-            intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
+            if hasattr(self.pinecone_client, 'pc') and self.pinecone_client.pc:
+                intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
+            else:
+                intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
         except Exception as e:
             print(f"Could not connect to intelligence-main index: {e}")
             return None
         
-        print(f"Enhanced LLM search for {variable_name}...")
+        print(f"Searching for {variable_name}...")
         
-        # Get enhanced configuration
-        config = self.enhanced_configs.get(variable_upper, {
-            'search_terms': [variable_name.lower()],
-            'metadata_patterns': [variable_name.lower()],
-            'excel_names': [variable_upper],
-            'symbols': [variable_upper]
-        })
+        # Simple but effective search
+        search_patterns = [variable_name.upper(), variable_name.lower()]
+        if variable_upper == 'WTI':
+            search_patterns.extend(['crude', 'oil', 'petroleum'])
+        elif variable_upper == 'GOLD':
+            search_patterns.extend(['gold', 'precious'])
+        elif variable_upper == 'SPY':
+            search_patterns.extend(['spy', 'sp500'])
         
-        all_candidates = []
+        best_match = None
+        best_score = 0
         
-        # Strategy 1: Exact metadata matching
-        for excel_name in config['excel_names']:
-            try:
-                response = intelligence_index.query(
-                    vector=[0.0] * 1536,
-                    top_k=50,
-                    include_metadata=True,
-                    filter={"excel_name": {"$eq": excel_name}}
-                )
-                all_candidates.extend(self._process_search_response(response, "excel_exact"))
-            except:
-                pass
-        
-        # Strategy 2: Symbol matching
-        for symbol in config['symbols']:
-            try:
-                response = intelligence_index.query(
-                    vector=[0.0] * 1536,
-                    top_k=50,
-                    include_metadata=True,
-                    filter={"symbol": {"$eq": symbol}}
-                )
-                all_candidates.extend(self._process_search_response(response, "symbol_exact"))
-            except:
-                pass
-        
-        # Strategy 3: LLM semantic search
-        if self.openai_client:
-            for search_term in config['search_terms']:
-                try:
-                    # Generate embedding
-                    embedding_response = self.openai_client.embeddings.create(
-                        input=f"{search_term} daily price data time series economic financial indicator",
-                        model="text-embedding-ada-002"
-                    )
-                    
-                    query_vector = embedding_response.data[0].embedding
-                    
-                    response = intelligence_index.query(
-                        vector=query_vector,
-                        top_k=50,
-                        include_metadata=True
-                    )
-                    
-                    all_candidates.extend(self._process_search_response(response, "semantic"))
-                    
-                except Exception as e:
-                    print(f"LLM semantic search failed for {search_term}: {e}")
-                    continue
-        
-        # Strategy 4: Pattern matching in metadata
-        for pattern in config['metadata_patterns']:
-            try:
-                response = intelligence_index.query(
-                    vector=[0.0] * 1536,
-                    top_k=100,
-                    include_metadata=True,
-                    filter={"description": {"$regex": f".*{pattern}.*"}}
-                )
-                all_candidates.extend(self._process_search_response(response, "pattern"))
-            except:
-                pass
-        
-        # Strategy 5: Comprehensive metadata scan
+        # Basic search with simple patterns
         try:
             response = intelligence_index.query(
                 vector=[0.0] * 1536,
-                top_k=500,
+                top_k=200,
                 include_metadata=True
             )
             
             for match in response.matches:
                 if hasattr(match, 'metadata') and match.metadata:
                     metadata = match.metadata
+                    score = 0
                     
-                    # Check all text fields for our patterns
-                    all_text = ' '.join([
-                        str(metadata.get('excel_name', '')),
-                        str(metadata.get('name', '')),
-                        str(metadata.get('symbol', '')),
-                        str(metadata.get('description', '')),
-                        str(metadata.get('title', '')),
-                        str(metadata.get('raw_text', ''))
-                    ]).lower()
+                    # Check excel_name
+                    excel_name = str(metadata.get('excel_name', '')).upper()
+                    if excel_name == variable_upper:
+                        score += 10
+                    elif any(pattern.upper() in excel_name for pattern in search_patterns):
+                        score += 5
                     
-                    # Check if any of our search patterns match
-                    for pattern in config['metadata_patterns'] + [variable_name.lower()]:
-                        if pattern in all_text:
-                            all_candidates.append({
-                                'id': match.id,
-                                'metadata': metadata,
-                                'score': getattr(match, 'score', 0),
-                                'match_type': 'comprehensive',
-                                'matched_pattern': pattern
-                            })
-                            break
+                    # Check if has time series data
+                    if any(key in metadata for key in ['time_series', 'data', 'values']):
+                        score += 3
+                    
+                    if score > best_score:
+                        best_score = score
+                        best_match = {
+                            'id': match.id,
+                            'metadata': metadata,
+                            'confidence': min(score / 10.0, 1.0)
+                        }
         
         except Exception as e:
-            print(f"Comprehensive scan failed: {e}")
-        
-        if not all_candidates:
-            print(f"No vectors found for {variable_name}")
+            print(f"Search failed for {variable_name}: {e}")
             return None
         
-        # Rank candidates by relevance
-        best_candidate = self._rank_and_select_best(all_candidates, config, variable_name)
+        if best_match and best_score > 3:
+            self.vector_cache[variable_upper] = best_match
+            print(f"Found match for {variable_name}: {best_match['id']}")
+            return best_match
         
-        if best_candidate:
-            # Cache the result
-            self.vector_cache[variable_upper] = best_candidate
-            print(f"Best match for {variable_name}: {best_candidate['id']} (confidence: {best_candidate.get('confidence', 0):.2f})")
-            return best_candidate
-        
+        print(f"No suitable match found for {variable_name}")
         return None
     
-    def _process_search_response(self, response, match_type):
-        """Process Pinecone search response"""
-        candidates = []
-        
-        if hasattr(response, 'matches') and response.matches:
-            for match in response.matches:
-                if hasattr(match, 'metadata') and match.metadata:
-                    candidates.append({
-                        'id': match.id,
-                        'metadata': match.metadata,
-                        'score': getattr(match, 'score', 0),
-                        'match_type': match_type
-                    })
-        
-        return candidates
-    
-    def _rank_and_select_best(self, candidates, config, variable_name):
-        """Rank candidates and select the best match"""
-        if not candidates:
-            return None
-        
-        # Remove duplicates
-        unique_candidates = {}
-        for candidate in candidates:
-            vector_id = candidate['id']
-            if vector_id not in unique_candidates or candidate['score'] > unique_candidates[vector_id]['score']:
-                unique_candidates[vector_id] = candidate
-        
-        candidates = list(unique_candidates.values())
-        
-        # Score each candidate
-        scored_candidates = []
-        for candidate in candidates:
-            score = self._calculate_relevance_score(candidate, config, variable_name)
-            scored_candidates.append({
-                **candidate,
-                'confidence': score
-            })
-        
-        # Sort by confidence
-        scored_candidates.sort(key=lambda x: x['confidence'], reverse=True)
-        
-        # Return best if above threshold
-        if scored_candidates and scored_candidates[0]['confidence'] > 0.3:
-            return scored_candidates[0]
-        
-        return None
-    
-    def _calculate_relevance_score(self, candidate, config, variable_name):
-        """Calculate relevance score for a candidate"""
-        score = 0.0
-        metadata = candidate.get('metadata', {})
-        
-        # Base score from match type
-        match_type_scores = {
-            'excel_exact': 1.0,
-            'symbol_exact': 0.9,
-            'semantic': 0.8,
-            'pattern': 0.6,
-            'comprehensive': 0.4
-        }
-        
-        score += match_type_scores.get(candidate.get('match_type', ''), 0.2)
-        
-        # Exact matches bonus
-        excel_name = str(metadata.get('excel_name', '')).upper()
-        symbol = str(metadata.get('symbol', '')).upper()
-        
-        if excel_name in config['excel_names']:
-            score += 0.4
-        if symbol in config['symbols']:
-            score += 0.3
-        
-        # Time series data bonus
-        has_time_series = any(key in metadata for key in [
-            'time_series', 'data', 'values', 'price_data', 'historical_data'
-        ])
-        if has_time_series:
-            score += 0.3
-        
-        # Variable name exact match bonus
-        if variable_name.upper() in excel_name or variable_name.upper() in symbol:
-            score += 0.2
-        
-        return min(score, 1.0)
+
 
     def find_vector_for_variable(self, variable_name):
         """
@@ -304,7 +155,10 @@ class MultiFactorDataFetcher:
         Extract time series data from a Pinecone vector
         """
         try:
-            intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
+            if hasattr(self.pinecone_client, 'pc') and self.pinecone_client.pc:
+                intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
+            else:
+                intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
             
             # Fetch the specific vector
             vector_response = intelligence_index.fetch([vector_info['id']])
