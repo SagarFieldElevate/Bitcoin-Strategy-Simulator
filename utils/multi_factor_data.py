@@ -447,7 +447,7 @@ Respond with JSON:
         
         return correlation_matrix
     
-    def simulate_multi_factor_series(self, historical_data, n_simulations, simulation_days, correlation_matrix=None, market_condition=None):
+    def simulate_multi_factor_series(self, historical_data, n_simulations, simulation_days, correlation_matrix=None, market_condition=None, regime_scenarios=None):
         """
         Generate correlated synthetic paths for multiple variables using Cholesky decomposition
         
@@ -456,7 +456,8 @@ Respond with JSON:
             n_simulations: Number of simulation paths
             simulation_days: Number of days to simulate
             correlation_matrix: Pre-calculated correlation matrix (optional)
-            market_condition: Market condition to apply consistent adjustments across all variables
+            market_condition: Market condition to apply consistent adjustments across all variables (legacy)
+            regime_scenarios: Dictionary mapping variable names to MarketCondition scenarios (new)
             
         Returns:
             dict: Dictionary of simulated paths for each variable
@@ -473,10 +474,34 @@ Respond with JSON:
         mean_returns = returns.mean().values
         volatilities = returns.std().values
         
-        # Apply market condition adjustments consistently across all variables
-        if market_condition is not None:
+        # Apply regime-specific adjustments per variable
+        if regime_scenarios is not None:
             from .market_conditions import adjust_mu_sigma_for_condition
-            print(f"Applying market condition: {market_condition.value}")
+            print(f"Applying regime-specific scenarios to variables")
+            
+            adjusted_params = []
+            for i, var in enumerate(variables):
+                if var in regime_scenarios:
+                    scenario = regime_scenarios[var]
+                    mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(
+                        mean_returns[i], volatilities[i], scenario
+                    )
+                    print(f"  {var}: {scenario.value}")
+                    print(f"    μ {mean_returns[i]:.4f} -> {mu_adjusted:.4f}, σ {volatilities[i]:.4f} -> {sigma_adjusted:.4f}")
+                else:
+                    # Use base parameters if no scenario specified
+                    mu_adjusted, sigma_adjusted = mean_returns[i], volatilities[i]
+                    print(f"  {var}: Using base parameters (no scenario)")
+                
+                adjusted_params.append((mu_adjusted, sigma_adjusted))
+            
+            mean_returns = np.array([p[0] for p in adjusted_params])
+            volatilities = np.array([p[1] for p in adjusted_params])
+            
+        # Fallback to legacy uniform market condition application
+        elif market_condition is not None:
+            from .market_conditions import adjust_mu_sigma_for_condition
+            print(f"Applying uniform market condition: {market_condition.value}")
             
             adjusted_params = []
             for i, var in enumerate(variables):

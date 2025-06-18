@@ -312,9 +312,12 @@ class MonteCarloSimulator:
     def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
                                    market_condition=None, progress_callback=None, required_variables=None):
         """
-        Run multi-factor Monte Carlo simulation with correlated macro variables
+        Run multi-factor Monte Carlo simulation with regime-specific correlations
         """
         from .multi_factor_data import MultiFactorDataFetcher
+        from .scenario_propagation import ScenarioPropagator
+        from regime_correlations import REGIME_CORRELATIONS
+        from correlation_utils import build_matrix_from_dict
         
         print(f"Running multi-factor simulation with variables: {required_variables}")
         
@@ -322,12 +325,48 @@ class MonteCarloSimulator:
         data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
         historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
         
-        # Calculate correlation matrix
-        correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
+        # Generate regime-specific scenarios for each variable
+        if market_condition is not None:
+            propagator = ScenarioPropagator()
+            primary_asset = "BTC"  # Use BTC as primary driver
+            
+            # Propagate scenarios based on correlations
+            regime_scenarios = propagator.propagate_scenarios(
+                primary_asset, market_condition, required_variables, "correlation_weighted"
+            )
+            
+            print(f"Regime scenario assignments:")
+            for var, scenario in regime_scenarios.items():
+                print(f"  {var}: {scenario.value}")
+            
+            # Get regime-specific correlation matrix for actually available variables
+            available_variables = historical_data.columns.tolist()
+            regime_name = market_condition.name
+            
+            if regime_name in REGIME_CORRELATIONS and len(available_variables) > 1:
+                correlation_matrix = build_matrix_from_dict(
+                    REGIME_CORRELATIONS[regime_name], available_variables
+                )
+                print(f"Using {regime_name} correlation matrix for {len(available_variables)} variables")
+            else:
+                # Fallback to historical correlation
+                correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
+                print(f"Using historical correlation matrix for {len(available_variables)} variables")
+            
+            # Filter regime scenarios to match available variables
+            filtered_regime_scenarios = {var: scenario for var, scenario in regime_scenarios.items() 
+                                       if var in available_variables}
+            regime_scenarios = filtered_regime_scenarios
+        else:
+            # No market condition specified, use base parameters
+            regime_scenarios = None
+            correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
+            print("Using historical correlation matrix and base parameters")
         
-        # Generate correlated paths for all variables with consistent market condition
+        # Generate correlated paths with regime-specific scenarios
         simulated_paths = data_fetcher.simulate_multi_factor_series(
-            historical_data, n_simulations, simulation_days, correlation_matrix, market_condition
+            historical_data, n_simulations, simulation_days, 
+            correlation_matrix, market_condition=None, regime_scenarios=regime_scenarios
         )
         
         # Calculate strategy performance for each simulation
