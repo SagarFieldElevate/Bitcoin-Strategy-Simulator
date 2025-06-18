@@ -354,15 +354,28 @@ class MonteCarloSimulator:
             # Build filtered correlation matrix for available variables only
             regime_name = market_condition.name
             
+            print(f"\n=== SIMULATION DEBUG INFO ===")
+            print(f"Selected Market Condition: {market_condition.value}")
+            print(f"Variables being simulated: {available_variables}")
+            print(f"Mapped to correlation codes: {available_codes}")
+            
             if regime_name in REGIME_CORRELATIONS and len(available_codes) > 1:
                 correlation_matrix = build_matrix_from_dict(
                     REGIME_CORRELATIONS[regime_name], available_codes
                 )
-                print(f"Using filtered {regime_name} correlation matrix for {len(available_codes)} variables")
+                print(f"\nUsing {regime_name} regime correlation matrix:")
+                import pandas as pd
+                corr_df = pd.DataFrame(correlation_matrix, index=available_codes, columns=available_codes)
+                print(corr_df.round(3))
+                print()
             else:
                 # Fallback to historical correlation
                 correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
-                print(f"Using historical correlation matrix for {len(available_variables)} variables")
+                print(f"\nUsing historical correlation matrix (regime data unavailable):")
+                import pandas as pd
+                corr_df = pd.DataFrame(correlation_matrix, index=available_variables, columns=available_variables)
+                print(corr_df.round(3))
+                print()
                 regime_scenarios = None  # No regime scenarios if no regime correlation
         else:
             # No market condition specified, use base parameters
