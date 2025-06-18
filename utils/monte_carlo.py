@@ -312,51 +312,58 @@ class MonteCarloSimulator:
     def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
                                    market_condition=None, progress_callback=None, required_variables=None):
         """
-        Run multi-factor Monte Carlo simulation with regime-specific correlations
+        Run multi-factor Monte Carlo simulation with dynamic variable detection and regime-specific correlations
         """
         from .multi_factor_data import MultiFactorDataFetcher
         from .scenario_propagation import ScenarioPropagator
-        from regime_correlations import REGIME_CORRELATIONS
+        from regime_correlations import REGIME_CORRELATIONS, VARIABLE_NAME_MAPPING
         from correlation_utils import build_matrix_from_dict
         
+        # Detect variables from strategy metadata if not explicitly provided
+        if required_variables is None and selected_strategy is not None:
+            required_variables = self._detect_strategy_variables(selected_strategy)
+        
         print(f"Running multi-factor simulation with variables: {required_variables}")
+        
+        # Map variable names to short codes for correlation matrix lookup
+        variable_codes = self._map_variables_to_codes(required_variables)
+        print(f"Mapped to correlation codes: {variable_codes}")
         
         # Fetch historical multi-factor data
         data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
         historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
+        available_variables = historical_data.columns.tolist()
+        available_codes = self._map_variables_to_codes(available_variables)
         
-        # Generate regime-specific scenarios for each variable
+        print(f"Successfully fetched data for {len(available_variables)} variables: {available_variables}")
+        
+        # Generate regime-specific scenarios for each available variable
         if market_condition is not None:
             propagator = ScenarioPropagator()
             primary_asset = "BTC"  # Use BTC as primary driver
             
-            # Propagate scenarios based on correlations
+            # Propagate scenarios based on correlations using short codes
             regime_scenarios = propagator.propagate_scenarios(
-                primary_asset, market_condition, required_variables, "correlation_weighted"
+                primary_asset, market_condition, available_codes, "correlation_weighted"
             )
             
             print(f"Regime scenario assignments:")
             for var, scenario in regime_scenarios.items():
                 print(f"  {var}: {scenario.value}")
             
-            # Get regime-specific correlation matrix for actually available variables
-            available_variables = historical_data.columns.tolist()
+            # Build filtered correlation matrix for available variables only
             regime_name = market_condition.name
             
-            if regime_name in REGIME_CORRELATIONS and len(available_variables) > 1:
+            if regime_name in REGIME_CORRELATIONS and len(available_codes) > 1:
                 correlation_matrix = build_matrix_from_dict(
-                    REGIME_CORRELATIONS[regime_name], available_variables
+                    REGIME_CORRELATIONS[regime_name], available_codes
                 )
-                print(f"Using {regime_name} correlation matrix for {len(available_variables)} variables")
+                print(f"Using filtered {regime_name} correlation matrix for {len(available_codes)} variables")
             else:
                 # Fallback to historical correlation
                 correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
                 print(f"Using historical correlation matrix for {len(available_variables)} variables")
-            
-            # Filter regime scenarios to match available variables
-            filtered_regime_scenarios = {var: scenario for var, scenario in regime_scenarios.items() 
-                                       if var in available_variables}
-            regime_scenarios = filtered_regime_scenarios
+                regime_scenarios = None  # No regime scenarios if no regime correlation
         else:
             # No market condition specified, use base parameters
             regime_scenarios = None
