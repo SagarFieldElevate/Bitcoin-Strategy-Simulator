@@ -26,12 +26,21 @@ class SimulationRouter:
             return 'btc_only'
         elif strategy_type in ['correlation', 'multiway_combination']:
             return 'multi_factor'
-        elif strategy_type == 'hybrid':
-            # Use LLM to detect dependencies
-            return self._detect_dependencies_with_llm(description)
         else:
-            # Default fallback - analyze description
-            return self._detect_dependencies_with_llm(description)
+            # Use simple rule-based detection for all cases
+            text_to_check = f"{description}".lower()
+            
+            external_keywords = [
+                'spy', 'vix', 'gold', 'oil', 'treasury', 'bond', 'dollar', 'dxy',
+                'tips', 'cpi', 'inflation', 'eth', 'coingecko', 'yahoo finance',
+                'wti', 'crude', 'precious metal', 'volatility', 'stocks', 'equity',
+                's&p', 'ethereum', 'currency'
+            ]
+            
+            if any(keyword in text_to_check for keyword in external_keywords):
+                return 'multi_factor'
+            
+            return 'btc_only'
     
     def _detect_dependencies_with_llm(self, description):
         """

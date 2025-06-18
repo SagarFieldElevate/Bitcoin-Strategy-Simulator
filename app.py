@@ -290,33 +290,37 @@ search_term = st.sidebar.text_input(
 filtered_strategies = strategies if strategies else []
 
 if data_filter.startswith("BTC-only") and strategies:
-    # Filter to only BTC-only strategies
+    # Simple heuristic-based filtering for BTC-only strategies
     btc_strategies = []
-    router = SimulationRouter()
-    
     for strategy in strategies:
-        try:
-            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
-            if simulation_mode == 'btc_only':
-                btc_strategies.append(strategy)
-        except:
-            continue
+        description = strategy.get('description', '').lower()
+        excel_names = strategy.get('excel_names', [])
+        
+        # Quick check for obvious external dependencies
+        has_external = any(keyword in description for keyword in [
+            'spy', 'vix', 'gold', 'oil', 'treasury', 'bond', 'dollar', 'eth', 'coingecko'
+        ])
+        
+        if not has_external and not any('spy' in name.lower() or 'vix' in name.lower() for name in excel_names):
+            btc_strategies.append(strategy)
     
     filtered_strategies = btc_strategies
     st.sidebar.info(f"📊 {len(filtered_strategies)} BTC-only strategies")
 
 elif data_filter.startswith("Multi-factor") and strategies:
-    # Filter to multi-factor strategies
+    # Simple heuristic-based filtering for multi-factor strategies
     multi_strategies = []
-    router = SimulationRouter()
-    
     for strategy in strategies:
-        try:
-            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
-            if simulation_mode == 'multi_factor':
-                multi_strategies.append(strategy)
-        except:
-            continue
+        description = strategy.get('description', '').lower()
+        excel_names = strategy.get('excel_names', [])
+        
+        # Quick check for obvious external dependencies
+        has_external = any(keyword in description for keyword in [
+            'spy', 'vix', 'gold', 'oil', 'treasury', 'bond', 'dollar', 'eth', 'coingecko'
+        ])
+        
+        if has_external or any('spy' in name.lower() or 'vix' in name.lower() for name in excel_names):
+            multi_strategies.append(strategy)
     
     filtered_strategies = multi_strategies
     st.sidebar.info(f"📈 {len(filtered_strategies)} multi-factor strategies")
