@@ -103,7 +103,7 @@ def validate_correlation_matrices():
     Returns:
         bool: True if all matrices are valid
     """
-    assets = ["BTC", "GOLD", "SPY", "TIPS"]
+    assets = ["BTC", "GOLD", "SPY", "TIPS_10Y"]
     
     for regime_name, matrix in REGIME_CORRELATIONS.items():
         print(f"Validating {regime_name}...")

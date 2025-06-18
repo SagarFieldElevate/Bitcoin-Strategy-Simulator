@@ -27,8 +27,8 @@ class RegimeMonteCarloSimulator:
         
         # Calculate base statistics from historical data
         self.returns = historical_data.pct_change().dropna()
-        self.mean_returns = self.returns.mean().values
-        self.volatilities = self.returns.std().values
+        self.mean_returns = self.returns.mean().to_numpy()
+        self.volatilities = self.returns.std().to_numpy()
         
         print(f"Initialized regime Monte Carlo with {self.n_vars} variables: {self.variables}")
     
