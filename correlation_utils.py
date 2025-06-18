@@ -109,6 +109,42 @@ def extract_regime_matrix(regime_correlations: Dict[str, Any],
     regime_dict = regime_correlations[regime_name]
     return build_matrix_from_dict(regime_dict, asset_list)
 
+def make_positive_definite(matrix):
+    """
+    Make a correlation matrix positive definite by adjusting eigenvalues
+    
+    Args:
+        matrix: Input correlation matrix
+        
+    Returns:
+        np.ndarray: Positive definite matrix
+    """
+    eigvals, eigvecs = np.linalg.eigh(matrix)
+    eigvals = np.clip(eigvals, 1e-8, None)
+    return eigvecs @ np.diag(eigvals) @ eigvecs.T
+
+def ensure_cholesky_ready(correlation_matrix):
+    """
+    Ensure correlation matrix is ready for Cholesky decomposition
+    
+    Args:
+        correlation_matrix: Input correlation matrix
+        
+    Returns:
+        tuple: (corrected_matrix, was_corrected)
+    """
+    # Check if matrix is positive semi-definite
+    eigenvalues = np.linalg.eigvals(correlation_matrix)
+    min_eigenvalue = np.min(eigenvalues)
+    
+    if min_eigenvalue < -1e-8:  # Not positive semi-definite
+        print(f"Matrix not positive semi-definite (min eigenvalue: {min_eigenvalue:.6f})")
+        print("Applying positive definite correction...")
+        corrected_matrix = make_positive_definite(correlation_matrix)
+        return corrected_matrix, True
+    else:
+        return correlation_matrix, False
+
 def test_correlation_utils():
     """Test the correlation utility functions."""
     print("TESTING CORRELATION UTILITIES")

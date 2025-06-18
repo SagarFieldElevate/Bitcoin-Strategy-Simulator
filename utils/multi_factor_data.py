@@ -521,11 +521,19 @@ Respond with JSON:
         # Ensure correlation matrix is valid
         correlation_matrix = self._ensure_positive_definite(correlation_matrix)
         
+        # Ensure matrix is positive definite before Cholesky decomposition
+        from correlation_utils import ensure_cholesky_ready
+        correlation_matrix, was_corrected = ensure_cholesky_ready(correlation_matrix)
+        
+        if was_corrected:
+            print("Matrix corrected for positive definiteness")
+        
         # Cholesky decomposition
         try:
             cholesky_matrix = np.linalg.cholesky(correlation_matrix)
+            print(f"Cholesky decomposition successful for {n_vars}x{n_vars} matrix")
         except np.linalg.LinAlgError:
-            print("Warning: Correlation matrix not positive definite, using identity matrix")
+            print("Warning: Cholesky decomposition failed even after correction, using identity matrix")
             cholesky_matrix = np.eye(n_vars)
         
         # Generate correlated random variables

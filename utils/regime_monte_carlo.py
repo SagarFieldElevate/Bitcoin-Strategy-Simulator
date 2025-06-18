@@ -69,12 +69,19 @@ class RegimeMonteCarloSimulator:
         # Ensure correlation matrix is positive semi-definite
         correlation_matrix = self._ensure_positive_definite(correlation_matrix)
         
+        # Ensure matrix is positive definite before Cholesky decomposition
+        from correlation_utils import ensure_cholesky_ready
+        correlation_matrix, was_corrected = ensure_cholesky_ready(correlation_matrix)
+        
+        if was_corrected:
+            print("Matrix corrected for positive definiteness")
+        
         # Apply Cholesky decomposition
         try:
             cholesky_matrix = np.linalg.cholesky(correlation_matrix)
             print(f"Successfully computed Cholesky decomposition for {self.n_vars}x{self.n_vars} matrix")
         except np.linalg.LinAlgError:
-            print("Warning: Cholesky decomposition failed, using identity matrix")
+            print("Warning: Cholesky decomposition failed even after correction, using identity matrix")
             cholesky_matrix = np.eye(self.n_vars)
         
         # Calculate regime-adjusted parameters for each variable
