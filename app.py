@@ -59,96 +59,54 @@ def check_openai_connection():
 # Load strategies from Pinecone (simple and fast)
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def load_strategies_fast(_pinecone_client):
-    """Load all daily-frequency strategy descriptions from Pinecone quickly"""
+    """Load all strategies from Pinecone and filter for daily-frequency only"""
     if not _pinecone_client:
         return []
     
     try:
-        strategies = []
-        existing_ids = set()
+        from regime_correlations import is_daily_only_strategy
         
-        # Generate a much more comprehensive set of query vectors to find all 254 strategies
-        import random
-        import math
-        random.seed(42)
+        # Fetch ALL strategies from the index using scan/fetch
+        all_strategies = []
         
-        # Create systematic query vectors covering the entire 32-dimensional space
-        query_vectors = []
+        # Get all vector IDs first by scanning the entire index
+        scan_results = _pinecone_client.index.list()
+        all_ids = []
         
-        # 1. Basic orthogonal vectors
-        for i in range(32):
-            vec = [0.0] * 32
-            vec[i] = 0.001
-            query_vectors.append(vec)
+        # Collect all vector IDs
+        for ids_batch in scan_results:
+            all_ids.extend(ids_batch)
+        
+        print(f"Found {len(all_ids)} total vectors in index")
+        
+        # Fetch all strategies in batches of 100
+        batch_size = 100
+        for i in range(0, len(all_ids), batch_size):
+            batch_ids = all_ids[i:i + batch_size]
             
-        # 2. Combination vectors
-        for i in range(32):
-            for j in range(i+1, min(i+5, 32)):
-                vec = [0.0] * 32
-                vec[i] = 0.001
-                vec[j] = 0.001
-                query_vectors.append(vec)
-        
-        # 3. Pattern-based vectors
-        for step in range(1, 8):
-            for offset in range(step):
-                vec = [0.001 if (i + offset) % step == 0 else 0.0 for i in range(32)]
-                query_vectors.append(vec)
-        
-        # 4. Random vectors with different magnitudes
-        for magnitude in [0.001, 0.002, 0.005, 0.01, 0.02]:
-            for _ in range(20):
-                vec = [random.gauss(0, magnitude) for _ in range(32)]
-                query_vectors.append(vec)
-        
-        # 5. Dense vectors with different patterns
-        for density in [0.1, 0.3, 0.5, 0.7, 0.9]:
-            for _ in range(10):
-                vec = [random.random() * 0.01 if random.random() < density else 0.0 for _ in range(32)]
-                query_vectors.append(vec)
-        
-        print(f"Generated {len(query_vectors)} query vectors to ensure complete coverage")
-        
-        # Query with each vector
-        for i, query_vector in enumerate(query_vectors):
-            response = _pinecone_client.index.query(
-                vector=query_vector,
-                top_k=100,
-                include_metadata=True
-            )
-            
-            new_strategies_count = 0
-            if hasattr(response, 'matches'):
-                for match in response.matches:
-                    if hasattr(match, 'metadata') and match.metadata:
-                        strategy_id = match.metadata.get('strategy_id', match.id)
-                        description = match.metadata.get('description', '')
+            try:
+                fetch_response = _pinecone_client.index.fetch(ids=batch_ids)
+                
+                for vector_id, vector_data in fetch_response.vectors.items():
+                    if hasattr(vector_data, 'metadata') and vector_data.metadata:
+                        strategy = {
+                            'id': vector_id,
+                            'name': vector_data.metadata.get('name', 'Unknown Strategy'),
+                            'description': vector_data.metadata.get('description', 'No description available'),
+                            'excel_names': vector_data.metadata.get('excel_names', [])
+                        }
                         
-                        if description and strategy_id not in existing_ids:
-                            # Filter for daily-only strategies
-                            from regime_correlations import is_daily_only_strategy
-                            strategy_dict = {
-                                'id': strategy_id,
-                                'description': description,
-                                'metadata': match.metadata,
-                                'excel_names': match.metadata.get('excel_names', [])
-                            }
+                        # Only include strategies with daily-frequency variables
+                        if is_daily_only_strategy(strategy):
+                            all_strategies.append(strategy)
                             
-                            if is_daily_only_strategy(strategy_dict):
-                                strategies.append(strategy_dict)
-                                existing_ids.add(strategy_id)
-                                new_strategies_count += 1
-            
-            if new_strategies_count > 0:
-                print(f"Query {i+1}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
-            
-            # Stop if we've found all 254 strategies
-            if len(strategies) >= 254:
-                break
+            except Exception as e:
+                print(f"Error fetching batch {i//batch_size + 1}: {e}")
+                continue
         
-        print(f"Final total: {len(strategies)} strategies loaded")
-        return strategies
-        
+        print(f"Final total: {len(all_strategies)} daily-frequency strategies loaded")
+        return all_strategies
+    
     except Exception as e:
         print(f"Error loading strategies: {e}")
         return []
