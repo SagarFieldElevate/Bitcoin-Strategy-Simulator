@@ -275,9 +275,10 @@ else:
 st.sidebar.subheader("Strategy Selection")
 
 # Strategy type filter for user convenience
+total_count = len(strategies) if strategies else 0
 data_filter = st.sidebar.radio(
     "Strategy Type Filter:",
-    ["All strategies (254)", "BTC-only strategies", "Multi-factor strategies"],
+    [f"All strategies ({total_count})", "BTC-only strategies", "Multi-factor strategies"],
     index=0,
     help="Filter strategies by data requirements"
 )
