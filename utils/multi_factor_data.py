@@ -75,10 +75,8 @@ class MultiFactorDataFetcher:
             return self.vector_cache[variable_upper]
         
         try:
-            if hasattr(self.pinecone_client, 'pc') and self.pinecone_client.pc:
-                intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
-            else:
-                intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
+            # Use the intelligence-main index directly
+            intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
         except Exception as e:
             print(f"Could not connect to intelligence-main index: {e}")
             return None
@@ -155,10 +153,7 @@ class MultiFactorDataFetcher:
         Extract time series data from a Pinecone vector
         """
         try:
-            if hasattr(self.pinecone_client, 'pc') and self.pinecone_client.pc:
-                intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
-            else:
-                intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
+            intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
             
             # Fetch the specific vector
             vector_response = intelligence_index.fetch([vector_info['id']])
