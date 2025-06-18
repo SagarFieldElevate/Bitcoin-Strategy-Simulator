@@ -247,6 +247,133 @@ Respond with JSON:
             print(f"Error fetching data from Pinecone for {vector_info['id']}: {e}")
             return None
     
+    def fetch_wti_data_direct(self):
+        """
+        Direct extraction of WTI/crude oil data using multiple search strategies
+        """
+        try:
+            intelligence_index = self.pinecone_client.client.Index("intelligence-main")
+            
+            # Multiple search strategies for WTI/crude oil data
+            search_strategies = [
+                # Strategy 1: Direct metadata search for oil-related terms
+                {"filter": {"excel_name": {"$in": ["WTI", "CRUDE", "OIL", "BRENT"]}}},
+                {"filter": {"name": {"$regex": ".*oil.*"}}},
+                {"filter": {"symbol": {"$in": ["WTI", "CRUDE", "CLF", "CL"]}}},
+                {"filter": {"description": {"$regex": ".*crude.*"}}},
+                {"filter": {"title": {"$regex": ".*petroleum.*"}}},
+            ]
+            
+            all_matches = []
+            
+            # Try each search strategy
+            for strategy in search_strategies:
+                try:
+                    response = intelligence_index.query(
+                        vector=[0.0] * 1536,  # Dummy vector for metadata search
+                        top_k=100,
+                        include_metadata=True,
+                        **strategy
+                    )
+                    
+                    if hasattr(response, 'matches') and response.matches:
+                        for match in response.matches:
+                            if hasattr(match, 'metadata') and match.metadata:
+                                metadata = match.metadata
+                                # Look for oil/crude related keywords
+                                text_fields = [
+                                    metadata.get('excel_name', ''),
+                                    metadata.get('name', ''),
+                                    metadata.get('symbol', ''),
+                                    metadata.get('description', ''),
+                                    metadata.get('title', ''),
+                                    metadata.get('raw_text', '')
+                                ]
+                                
+                                combined_text = ' '.join(str(field).lower() for field in text_fields)
+                                
+                                # Check for oil-related keywords
+                                oil_keywords = ['wti', 'crude', 'oil', 'petroleum', 'brent', 'energy']
+                                if any(keyword in combined_text for keyword in oil_keywords):
+                                    all_matches.append({
+                                        'id': match.id,
+                                        'metadata': metadata,
+                                        'score': match.score if hasattr(match, 'score') else 0,
+                                        'text': combined_text
+                                    })
+                except Exception as e:
+                    print(f"Search strategy failed: {e}")
+                    continue
+            
+            if not all_matches:
+                print("No WTI/crude oil data found in intelligence-main index")
+                return None
+            
+            # Sort by relevance and try to extract data
+            all_matches.sort(key=lambda x: x['score'], reverse=True)
+            
+            for match in all_matches[:5]:  # Try top 5 matches
+                try:
+                    # Try to extract time series data
+                    metadata = match['metadata']
+                    
+                    # Look for time series data in various formats
+                    time_series_sources = [
+                        metadata.get('time_series'),
+                        metadata.get('data'),
+                        metadata.get('values'),
+                        metadata.get('price_data'),
+                        metadata.get('historical_data')
+                    ]
+                    
+                    for ts_data in time_series_sources:
+                        if ts_data:
+                            # Try to parse the time series data
+                            if isinstance(ts_data, dict):
+                                df = pd.DataFrame.from_dict(ts_data, orient='index')
+                            elif isinstance(ts_data, list):
+                                df = pd.DataFrame(ts_data)
+                            else:
+                                continue
+                            
+                            # Convert index to datetime if needed
+                            if not isinstance(df.index, pd.DatetimeIndex):
+                                try:
+                                    df.index = pd.to_datetime(df.index)
+                                except:
+                                    if 'date' in df.columns:
+                                        df['date'] = pd.to_datetime(df['date'])
+                                        df = df.set_index('date')
+                                    else:
+                                        continue
+                            
+                            # Find value column
+                            value_col = None
+                            for col in ['close', 'value', 'price', 'rate', 'level', 'wti', 'crude']:
+                                if col.lower() in [c.lower() for c in df.columns]:
+                                    value_col = next(c for c in df.columns if c.lower() == col.lower())
+                                    break
+                            
+                            if value_col is None and len(df.columns) == 1:
+                                value_col = df.columns[0]
+                            
+                            if value_col and len(df) > 10:  # Ensure we have sufficient data
+                                series = df[value_col].dropna()
+                                if len(series) > 10:
+                                    print(f"Successfully extracted WTI data: {len(series)} points from {match['id']}")
+                                    return series
+                                    
+                except Exception as e:
+                    print(f"Failed to extract data from {match['id']}: {e}")
+                    continue
+            
+            print("Could not extract valid WTI time series data from any matches")
+            return None
+            
+        except Exception as e:
+            print(f"Error in WTI data extraction: {e}")
+            return None
+
     def fetch_gold_data_direct(self):
         """
         Direct extraction of gold data using confirmed working patterns
@@ -345,6 +472,32 @@ Respond with JSON:
                         print(f"No Bitcoin data found")
                 except Exception as e:
                     print(f"Error fetching Bitcoin data: {e}")
+                continue
+            
+            # Special handling for WTI/Oil variables
+            if var.upper() in ['WTI', 'CRUDE', 'OIL', 'CL']:
+                print(f"Fetching {var} using direct WTI extraction...")
+                try:
+                    wti_data = self.fetch_wti_data_direct()
+                    if wti_data is not None and len(wti_data) > 0:
+                        # Filter by date range
+                        start_dt = pd.to_datetime(start_date)
+                        end_dt = pd.to_datetime(end_date)
+                        
+                        filtered_data = wti_data[
+                            (wti_data.index >= start_dt) & 
+                            (wti_data.index <= end_dt)
+                        ]
+                        
+                        if len(filtered_data) > 0:
+                            data_frames[var] = filtered_data
+                            print(f"Successfully fetched {var}: {len(filtered_data)} days")
+                        else:
+                            print(f"No WTI data in date range for {var}")
+                    else:
+                        print(f"Could not extract WTI data for {var}")
+                except Exception as e:
+                    print(f"Error fetching WTI data for {var}: {e}")
                 continue
             
             # Special handling for GOLD variables

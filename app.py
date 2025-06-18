@@ -632,6 +632,51 @@ if st.session_state.bitcoin_data is not None:
                                 else:
                                     status_placeholder.info(f"📈 Executing strategy logic: {sim_number}/{n_simulations}")
                             
+                            # Data validation before simulation
+                            if simulation_mode == 'multi_factor' and required_variables:
+                                status_placeholder.info("🔍 Validating required data availability...")
+                                missing_data = []
+                                
+                                # Test data availability for each required variable
+                                from utils.multi_factor_data import MultiFactorDataFetcher
+                                data_fetcher = MultiFactorDataFetcher(pinecone_client)
+                                
+                                for var in required_variables:
+                                    if var != 'BTC':  # BTC data already validated
+                                        try:
+                                            # Quick test fetch to validate data availability
+                                            if var.upper() in ['WTI', 'CRUDE', 'OIL', 'CL']:
+                                                test_data = data_fetcher.fetch_wti_data_direct()
+                                                if test_data is None or len(test_data) < 10:
+                                                    missing_data.append(f'{var} (Oil prices)')
+                                            elif var.upper() in ['GOLD', 'GLD', 'XAU']:
+                                                test_data = data_fetcher.fetch_gold_data_direct()
+                                                if test_data is None or len(test_data) < 10:
+                                                    missing_data.append(f'{var} (Gold prices)')
+                                            else:
+                                                # For other variables, use the LLM-based search
+                                                vector_info = data_fetcher.find_vector_for_variable(var)
+                                                if not vector_info or vector_info.get('confidence', 0) < 0.3:
+                                                    missing_data.append(f'{var} (Economic data)')
+                                        except Exception as e:
+                                            print(f"Data validation failed for {var}: {e}")
+                                            missing_data.append(f'{var} (Data access error)')
+                                
+                                if missing_data:
+                                    overall_progress.progress(100, text="Data validation failed")
+                                    status_placeholder.empty()
+                                    
+                                    st.error("❌ **Required Data Not Available**")
+                                    st.error(f"Cannot run simulation - missing data for: {', '.join(missing_data)}")
+                                    st.warning("**Solutions:**")
+                                    st.warning("• Select a BTC-only strategy instead")
+                                    st.warning("• Choose a different multi-factor strategy")
+                                    st.warning("• Contact support if data should be available")
+                                    
+                                    # Clear progress indicators
+                                    progress_container.empty()
+                                    st.stop()
+                            
                             results = simulator.run_simulation(
                                 n_simulations=n_simulations,
                                 simulation_days=simulation_days,
