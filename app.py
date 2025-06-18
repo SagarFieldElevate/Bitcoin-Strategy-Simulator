@@ -123,14 +123,14 @@ def load_strategies_from_pinecone():
                                     'excel_names': vector_data.metadata.get('excel_names', [])
                                 }
                                 
-                                if is_daily_only_strategy(strategy):
-                                    all_strategies.append(strategy)
+                                # Include all strategies regardless of frequency
+                                all_strategies.append(strategy)
                                 
                 except Exception as e:
                     print(f"Error fetching batch {i//batch_size + 1}: {e}")
                     continue
         
-        print(f"Loaded {len(all_strategies)} daily-frequency strategies from Pinecone")
+        print(f"Loaded {len(all_strategies)} strategies from Pinecone")
         
         # Save to cache file
         try:
