@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "id": "sample",
+    "name": "Sample Strategy",
+    "description": "Loading strategies...",
+    "excel_names": []
+  }
+]

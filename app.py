@@ -56,59 +56,94 @@ def check_openai_connection():
     except Exception as e:
         return False, f"Connection failed: {str(e)}"
 
-# Load strategies from Pinecone (with simple caching)
-@st.cache_data(ttl=1800)  # Cache for 30 minutes
-def load_strategies_fast(_pinecone_client):
-    """Load all strategies from Pinecone and filter for daily-frequency only"""
-    if not _pinecone_client:
+# Load strategies with efficient file-based caching
+@st.cache_data(ttl=3600)  # Cache in memory for 1 hour
+def load_strategies_cached():
+    """Load strategies from file cache or Pinecone if cache is stale"""
+    import json
+    import os
+    from datetime import datetime
+    
+    cache_file = "strategies_cache.json"
+    cache_max_age = 86400  # 24 hours in seconds
+    
+    # Check if cache file exists and is recent
+    if os.path.exists(cache_file):
+        try:
+            file_age = datetime.now().timestamp() - os.path.getmtime(cache_file)
+            if file_age < cache_max_age:
+                with open(cache_file, 'r') as f:
+                    strategies = json.load(f)
+                    print(f"Loaded {len(strategies)} strategies from cache (age: {file_age/3600:.1f}h)")
+                    return strategies
+        except Exception as e:
+            print(f"Cache read error: {e}")
+    
+    # Cache miss or stale - load fresh from Pinecone
+    return load_strategies_from_pinecone()
+
+def load_strategies_from_pinecone():
+    """Load fresh strategies from Pinecone and update cache"""
+    import json
+    from regime_correlations import is_daily_only_strategy
+    
+    pinecone_client, status = init_pinecone()
+    if not pinecone_client:
+        print(f"Pinecone unavailable: {status}")
         return []
     
     try:
-        from regime_correlations import is_daily_only_strategy
-        
-        # Fetch ALL strategies from the index using scan/fetch
         all_strategies = []
         
-        # Get all vector IDs first by scanning the entire index
-        scan_results = _pinecone_client.index.list()
-        all_ids = []
-        
-        # Collect all vector IDs
-        for ids_batch in scan_results:
-            all_ids.extend(ids_batch)
-        
-        print(f"Found {len(all_ids)} total vectors in index")
-        
-        # Fetch all strategies in batches of 100
-        batch_size = 100
-        for i in range(0, len(all_ids), batch_size):
-            batch_ids = all_ids[i:i + batch_size]
+        # Get all vector IDs
+        if hasattr(pinecone_client.index, 'list'):
+            scan_results = pinecone_client.index.list()
+            all_ids = []
             
-            try:
-                fetch_response = _pinecone_client.index.fetch(ids=batch_ids)
+            for ids_batch in scan_results:
+                all_ids.extend(ids_batch)
+            
+            print(f"Found {len(all_ids)} total vectors in index")
+            
+            # Fetch in batches
+            batch_size = 100
+            for i in range(0, len(all_ids), batch_size):
+                batch_ids = all_ids[i:i + batch_size]
                 
-                for vector_id, vector_data in fetch_response.vectors.items():
-                    if hasattr(vector_data, 'metadata') and vector_data.metadata:
-                        strategy = {
-                            'id': vector_id,
-                            'name': vector_data.metadata.get('name', 'Unknown Strategy'),
-                            'description': vector_data.metadata.get('description', 'No description available'),
-                            'excel_names': vector_data.metadata.get('excel_names', [])
-                        }
+                try:
+                    if hasattr(pinecone_client.index, 'fetch'):
+                        fetch_response = pinecone_client.index.fetch(ids=batch_ids)
                         
-                        # Only include strategies with daily-frequency variables
-                        if is_daily_only_strategy(strategy):
-                            all_strategies.append(strategy)
-                            
-            except Exception as e:
-                print(f"Error fetching batch {i//batch_size + 1}: {e}")
-                continue
+                        for vector_id, vector_data in fetch_response.vectors.items():
+                            if hasattr(vector_data, 'metadata') and vector_data.metadata:
+                                strategy = {
+                                    'id': vector_id,
+                                    'name': vector_data.metadata.get('name', 'Unknown Strategy'),
+                                    'description': vector_data.metadata.get('description', 'No description'),
+                                    'excel_names': vector_data.metadata.get('excel_names', [])
+                                }
+                                
+                                if is_daily_only_strategy(strategy):
+                                    all_strategies.append(strategy)
+                                
+                except Exception as e:
+                    print(f"Error fetching batch {i//batch_size + 1}: {e}")
+                    continue
         
-        print(f"Final total: {len(all_strategies)} daily-frequency strategies loaded")
+        print(f"Loaded {len(all_strategies)} daily-frequency strategies from Pinecone")
+        
+        # Save to cache file
+        try:
+            with open("strategies_cache.json", 'w') as f:
+                json.dump(all_strategies, f, indent=2)
+            print("Strategies cached to file")
+        except Exception as e:
+            print(f"Cache save error: {e}")
+        
         return all_strategies
-    
+        
     except Exception as e:
-        print(f"Error loading strategies: {e}")
+        print(f"Pinecone loading error: {e}")
         return []
 
 # Initialize session state
