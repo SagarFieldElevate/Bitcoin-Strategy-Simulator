@@ -37,7 +37,7 @@ class SimulationRouter:
         """
         Use LLM to detect if strategy depends on external macro variables
         """
-        prompt = f"""Analyze this trading strategy description and determine if it depends on external macro-economic variables beyond Bitcoin price.
+        prompt = f"""Analyze this trading strategy description and determine if it depends on external variables beyond Bitcoin price.
 
 Strategy description: "{description}"
 
@@ -47,6 +47,8 @@ Look for mentions of:
 - Interest rates and bonds (TIPS, Treasury yields, Fed rates, etc.)
 - Currency indices (DXY, currency pairs, etc.)
 - Other asset classes (stocks, ETFs, real estate, etc.)
+- Cryptocurrency data (ETH volume, ETH price, other crypto assets, CoinGecko data)
+- Market data sources (Yahoo Finance, CoinGecko, trading volume from other assets)
 - Economic events or data releases
 
 Respond with JSON in this exact format:
@@ -111,7 +113,8 @@ If the strategy only mentions Bitcoin price, technical indicators, or chart patt
             'dxy': ['dxy', 'dollar', 'currency'],
             'gold': ['gold', 'precious metal'],
             'vix': ['vix', 'volatility'],
-            'spy': ['spy', 'stocks', 'equity', 's&p']
+            'spy': ['spy', 'stocks', 'equity', 's&p'],
+            'eth': ['eth', 'ethereum', 'coingecko eth', 'eth volume', 'eth daily volume']
         }
         
         # Check description and excel_names for variable mentions
