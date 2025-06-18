@@ -6,37 +6,41 @@ These correlations reflect how assets typically behave together during various m
 # Daily frequency variables from the screenshot (as set for efficient lookup)
 DAILY_VARIABLES = {
     "Bitcoin Daily Close Price",
-    "GOLD DAILY CLOSE PRICE", 
+    "Gold Daily Close Price", 
     "WTI Crude Oil Price (USD/Barrel)",
-    "SPY DAILY CLOSE PRICE",
+    "SPY Daily Close Price",
     "QQQ Daily Close Price",
     "10-Year Treasury Yield (%)",
     "10-Year TIPS Yield (%)",
     "5-Year TIPS Yield (%)", 
     "20-Year TIPS Yield (%)",
     "30-Year TIPS Yield (%)",
-    "TREASURY_YIELD",
-    "COINGECKO ETH DAILY VOLUME",
     "DefiLlama DEX Historical Volume",
-    "FEAR & GREED INDEX"
+    "Fear & Greed Index",
+    "CoinGecko ETH Daily Volume",
+    "US Equity Market Capitalization (Billions USD)",
+    "US Federal Funds Rate",
+    "Baltic Dry Index"
 }
 
 # Mapping from full names to short codes for correlation matrices
 VARIABLE_NAME_MAPPING = {
     "Bitcoin Daily Close Price": "BTC",
-    "GOLD DAILY CLOSE PRICE": "GOLD",
+    "Gold Daily Close Price": "GOLD",
     "WTI Crude Oil Price (USD/Barrel)": "WTI", 
-    "SPY DAILY CLOSE PRICE": "SPY",
+    "SPY Daily Close Price": "SPY",
     "QQQ Daily Close Price": "QQQ",
     "10-Year Treasury Yield (%)": "TREASURY_10Y",
     "10-Year TIPS Yield (%)": "TIPS_10Y",
     "5-Year TIPS Yield (%)": "TIPS_5Y",
     "20-Year TIPS Yield (%)": "TIPS_20Y", 
     "30-Year TIPS Yield (%)": "TIPS_30Y",
-    "TREASURY_YIELD": "TREASURY_10Y",  # Map to same as 10-year
-    "COINGECKO ETH DAILY VOLUME": "ETH_VOLUME",
+    "CoinGecko ETH Daily Volume": "ETH_VOLUME",
     "DefiLlama DEX Historical Volume": "DEX_VOLUME",
-    "FEAR & GREED INDEX": "FEAR_GREED"
+    "Fear & Greed Index": "FEAR_GREED",
+    "US Equity Market Capitalization (Billions USD)": "EQUITY_CAP",
+    "US Federal Funds Rate": "FED_RATE",
+    "Baltic Dry Index": "BALTIC"
 }
 
 def is_daily_only_strategy(strategy):
