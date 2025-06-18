@@ -290,30 +290,30 @@ search_term = st.sidebar.text_input(
 filtered_strategies = strategies if strategies else []
 
 if data_filter.startswith("BTC-only") and strategies:
-    # Filter for BTC-only strategies (only use Bitcoin variables)
+    # Filter for BTC-only strategies (excel_names contains only BTC variables)
     btc_strategies = []
     for strategy in strategies:
         excel_names = strategy.get('excel_names', [])
         
-        # Check if strategy only uses Bitcoin-related variables
-        non_btc_variables = [name for name in excel_names if 'bitcoin' not in name.lower() and 'btc' not in name.lower()]
+        # Only classify as BTC-only if ALL variables contain "BTC" or "Bitcoin"
+        is_btc_only = all('btc' in name.lower() or 'bitcoin' in name.lower() for name in excel_names)
         
-        if len(non_btc_variables) == 0:
+        if is_btc_only:
             btc_strategies.append(strategy)
     
     filtered_strategies = btc_strategies
     st.sidebar.info(f"📊 {len(filtered_strategies)} BTC-only strategies")
 
 elif data_filter.startswith("Multi-factor") and strategies:
-    # Filter for multi-factor strategies (use external variables)
+    # Filter for multi-factor strategies (excel_names contains any non-BTC variables)
     multi_strategies = []
     for strategy in strategies:
         excel_names = strategy.get('excel_names', [])
         
-        # Check if strategy uses any non-Bitcoin variables
-        non_btc_variables = [name for name in excel_names if 'bitcoin' not in name.lower() and 'btc' not in name.lower()]
+        # Classify as multi-factor if ANY variable is not BTC/Bitcoin
+        has_non_btc = any('btc' not in name.lower() and 'bitcoin' not in name.lower() for name in excel_names)
         
-        if len(non_btc_variables) > 0:
+        if has_non_btc:
             multi_strategies.append(strategy)
     
     filtered_strategies = multi_strategies
