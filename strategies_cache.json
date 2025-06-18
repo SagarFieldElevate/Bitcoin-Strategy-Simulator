@@ -1,8 +1,2281 @@
 [
   {
-    "id": "sample",
-    "name": "Sample Strategy",
-    "description": "Loading strategies...",
-    "excel_names": []
+    "id": "07257a0f4dfe6c6dbf49",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 30-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "30-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "31537c2a61e5ae572cee",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1d2156b6dfeebd4e46a7",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "08ae0e4e136667ccc49b",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND SPY Daily Close Price up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "303da01a705c7d65ae6a",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "217b6011a36b0128c25b",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 13 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3c808269434a0451a864",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 29 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "219f8faf880a20c6be41",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2ad38992cd7a786c2c22",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "350fcd7c5e4c8e0ead6b",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 15 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2bb0475f3bbe693d294a",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 11 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "290bdf47d2206cea6aa2",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND 10-Year TIPS Yield (%) up, BUY Bitcoin",
+    "excel_names": [
+      "Fear & Greed Index",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "0945ccba03bd5c1522b7",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "07dbe22c05a5dfcae3f3",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "32dfe95a697b538c2ab2",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 28 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2ff2d76c25e7acbdb7ad",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin 29 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2bb183eb927d8d97c237",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) increases, BUY Bitcoin 29 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "02a95d3dd7e382e179c8",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "308ca4f1ef4765b6d1d3",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2ae1af943614b8128956",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 30 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1d9609183b21687bc26c",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "23c8da52330baa27a85f",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND Baltic Dry Index up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3af0178fd9787d4c673a",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "13299076abda3557f87c",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 17 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "317382ad7e49e2428747",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3c0079da70de853d7525",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "091f0089636c23666494",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1b3d4f0d858a43e1e59c",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 21 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "020dfe6ab663c27df2b1",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) increases, BUY Bitcoin 28 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2d9b442eecde797ef6c8",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 10 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "0f31aa461bb87ae7a2f3",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "23426f6be9aa77967574",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1955f196697c5ec16b4c",
+    "name": "Unknown Strategy",
+    "description": "When SPY Daily Close Price increases, BUY Bitcoin 23 days later",
+    "excel_names": [
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "011785d20fc2a0f3e919",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 17 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1ece38427fc0182b6aaa",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "18c7415d65ac47b0bd23",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "208956e9a3a677b199e9",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "0c33451143474fbef92c",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "05d90ec52a48a972fd05",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "074dd7e30be1c10c4c0c",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "10788e0ef301d4db3bc0",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 22 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "0fc2fa2f5f4ae8003b42",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) increases, BUY Bitcoin 30 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "1a1b8f292688d9bf7456",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "22cdd2a236259cd8e549",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 30-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "30-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "14b8ec8f05ee6cddffef",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "09e0de0338ea3bc0a5ae",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND 10-Year Treasury Yield (%) up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "10-Year Treasury Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "0b1aa5fc8f614bed9821",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "31a7394915c9b79d7185",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "249c63f713e70a4c37b0",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 13 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "216c3e3eb083c8d7cf0a",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 20 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "2c22cbf5bd4ef0529a01",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6b1dc9129dbd1319d230",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND 5-Year TIPS Yield (%) up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6ccce44babc043bf429e",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "613b96466568b86cd452",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6ec988c4a4f977631b84",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 24 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3e9d6f90909b750369be",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND Baltic Dry Index up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3db4509d42201027e55b",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) increases, BUY Bitcoin 21 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6df3c87a0e3686b25797",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "57c9db792e90e9952c6c",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "66a26b68becd5392525f",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3ea5b713f51f0b48b9ec",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "545cb7c3516e677bd0f5",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 13 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5414a9640edf4aa55685",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6bbc0d5588b6d4171f31",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up + 1 more, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "677afb16c62690a8418d",
+    "name": "Unknown Strategy",
+    "description": "QQQ Daily Close Price shows strong positive correlation (r=0.92) with Bitcoin. Entry: When QQQ Daily Close Price moves >2% in same direction. Position sizing: Fixed 100% of capital per trade. Risk management: Stop loss at 2.0x ATR, Take profit at 3.0x ATR. Hold period: 3 days maximum.",
+    "excel_names": [
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6df2af403b03e43a6f39",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6e0881ace7639c450c7a",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5d70760c84196261b640",
+    "name": "Unknown Strategy",
+    "description": "DefiLlama DEX Historical Volume shows strong positive correlation (r=0.85) with Bitcoin. Entry: When DefiLlama DEX Historical Volume moves >2% in same direction. Position sizing: Fixed 100% of capital per trade. Risk management: Stop loss at 2.0x ATR, Take profit at 3.0x ATR. Hold period: 3 days maximum.",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "4813a527630f8207c673",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "567c74f9cf2efeed8819",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "55fea5111fd01822261c",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 23 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "76193c112679bb6f6fd9",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "3fb3134586b88bc128f8",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 13 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6495b43a2eb95997180d",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "562fa451e10175558703",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6eb4ccb7a0298b289582",
+    "name": "Unknown Strategy",
+    "description": "When QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "55f143d2a19b36febe84",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "57203dfd07111112bbfc",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5a80c19c92464ec41fe0",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6935c71d5847c24b8094",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5064c137231a2fc454a6",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 24 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "4e747dbb709870001c25",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "64125718918b60d1d82d",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "684839225c624fbf3d32",
+    "name": "Unknown Strategy",
+    "description": "US Equity Market Capitalization (Billions USD) shows strong positive correlation (r=0.94) with Bitcoin. Entry: When US Equity Market Capitalization (Billions USD) moves >2% in same direction. Position sizing: Fixed 100% of capital per trade. Risk management: Stop loss at 2.0x ATR, Take profit at 3.0x ATR. Hold period: 3 days maximum.",
+    "excel_names": [
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "76fdd1646a863b4d85ec",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "76900117c89e3807e8a6",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND SPY Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "519c5056c454cf20d22e",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up + 1 more, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5c7e02e2fe52f74529f8",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 27 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "4343ca197614112d656b",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5f6e8d948d928b7331c1",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 26 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "697558f9b24129e73fa0",
+    "name": "Unknown Strategy",
+    "description": "When SPY Daily Close Price increases, BUY Bitcoin 24 days later",
+    "excel_names": [
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7a6b46677ceb6126aa04",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 12 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5d0132faed0b945145cf",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "60bcc56d89c158cbb737",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "60bb34a6b822c12dd1ca",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND 5-Year TIPS Yield (%) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5805958c0d2cefed2124",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "4bd4b980ad6d9791a3e1",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5ed40226c48b6c6fb277",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "625daab87fda910000d0",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "41ae2d99f206b953cde7",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "5dc52960eea4ccc22aea",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 8 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "67d9e4d7eb336f1bbc1c",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 16 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "422d5051edab9fb405e9",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 28 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "6db88da397f0614cd343",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7472cb58ad7022697f62",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) increases, BUY Bitcoin 16 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "41e5453965becd7ef524",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "57016c4f1041272c07e0",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7df787067c52102e21bb",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 24 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a4dd24ab1f8e13f23728",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "9d47134df601c40d362a",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "80e312663b5f8ef5fd8b",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "8bd59f3041d7dc691155",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "809e7ca522fc07675193",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin 14 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b1735086e58a6b99cb26",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "80a2173eb6054d89a540",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 29 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "8822cc960be8353a76ed",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "9f76598dfe3d1295f823",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "81b3c2a46b39b28bef78",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7e1aa7e30120c0f48d49",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 12 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "823e868dc293fe98265c",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a7d79150493454f72bc8",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a3ed6ce2937fea2e19a2",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7a7a7eaf28c5e00fb33f",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a16abc3faeab35eac82a",
+    "name": "Unknown Strategy",
+    "description": "SPY Daily Close Price shows strong positive correlation (r=0.93) with Bitcoin. Entry: When SPY Daily Close Price moves >2% in same direction. Position sizing: Fixed 100% of capital per trade. Risk management: Stop loss at 2.0x ATR, Take profit at 3.0x ATR. Hold period: 3 days maximum.",
+    "excel_names": [
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b0c94606afd4104802ea",
+    "name": "Unknown Strategy",
+    "description": "When US Equity Market Capitalization (Billions USD) increases, BUY Bitcoin 6 days later",
+    "excel_names": [
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7ecec5b71eab8e761625",
+    "name": "Unknown Strategy",
+    "description": "When QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a43abe2f21ef1c0368f1",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "acc440107c7923d9b7d9",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7d0a933380d626043c52",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "Fear & Greed Index",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "9c45405f8d3cf841766b",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "afa4821b8d7873365879",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "91c8733484fe21632411",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ac336b61816f5b88f375",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ac2865c3bd948c2dd4a4",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "8d0e294a48444a130511",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) increases, BUY Bitcoin 28 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "96d8e3a6479f1d21bffc",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "8bc60dde3a1ee145d8ed",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 14 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7beed3e608e12e8bdc21",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) increases, BUY Bitcoin 26 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "abd0c950fa435c8e2843",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ab9a44b44d31d23749e2",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a7717778fb3b07daa944",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "aea3bdb84c37c6107bbd",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up + 1 more, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "abd4a4f1ece70cd09dfc",
+    "name": "Unknown Strategy",
+    "description": "When US Equity Market Capitalization (Billions USD) increases, BUY Bitcoin 12 days later",
+    "excel_names": [
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b32406eb51fbde3ba8b8",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 30 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "aabe30ba54f649f68472",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "8e787a32050c1f266481",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 29 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b3dc1222eac058ff4a07",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "978692cedd7d98fbb762",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 19 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b26c5638d0528e7bcd5f",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "97a38a56b2170fb8bb49",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7be3698e9fb2e3a3b45b",
+    "name": "Unknown Strategy",
+    "description": "When DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a6a8531d038cd7e49aa2",
+    "name": "Unknown Strategy",
+    "description": "Machine Learning ensemble combining Random Forest, XGBoost, and LightGBM models. Entry when at least 2 models agree with >55% confidence. Features: 50 technical indicators with 30-day lookback. Models trained on historical price patterns and technical indicator relationships. Rebalanced daily, positions held for 3 days maximum.",
+    "excel_names": [
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "a0fadd975a3ad8634e30",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "962b27af2486aa3d5abc",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 14 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "7ce868bb5bbc18c4557a",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "aee4259888df1201fa8f",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) increases, BUY Bitcoin 21 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "aab73ecba48c433bd765",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "85d5455cb9b3d23345a3",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "acd11588df0d25fc7bd9",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "af2cf26f0c3717cc6c46",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "96a5dd14b77bdaa2ec37",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 18 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "9a72d50a429e18361d22",
+    "name": "Unknown Strategy",
+    "description": "Multi-factor strategy combining 4 signal types with weighted scoring. Technical (40% weight): RSI, MACD, Bollinger Bands, ADX trend strength. ML predictions (30% weight): Ensemble model output when confidence >50%. Sentiment (20% weight): Fear/Greed index - contrarian signals at extremes. Risk adjustment (10% weight): Reduce position size in high volatility (>80th percentile). BUY when combined score >0.5, SELL when <-0.5. Hold for 3 days.",
+    "excel_names": [
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "97e3ad004fee5188dc12",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "974400ca081e54836c16",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e8c353b09e10196a5141",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cf37fd83a76081be129c",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "dc8a7b80b79f48d6942b",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 26 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "edc9e39587db63a824f2",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cc952c2fa47266cdd58d",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c9b4f1136a21ed8292cb",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "eaed382ed90148aafb1e",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND Gold Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "df0f0e560e74e93dcff8",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b88a3bbfdc6d28933dca",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cf83b9deb7c22094a634",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ef4b06cb1deb03e5d011",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b5c8129d695b42ed5efe",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) increases, BUY Bitcoin 22 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "bda2ed343b3ca1b0171b",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e42671b842922b32c254",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c7de51404301d02fd6b0",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) increases, BUY Bitcoin 27 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d68fa5cbdac2e76ee8f0",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) increases, BUY Bitcoin 23 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ed195b8bc9649bc09236",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 16 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ba66149519dad01cc461",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cfcacfd788c3f2569e79",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e8fb5f61472e598413f8",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND CoinGecko ETH Daily Volume up, BUY Bitcoin",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e11b5c4d3a485629ed42",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b950af0e9db95c9f55e6",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 6 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c589bfe91dbb37c51152",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e0ce36a96b5e651d36ff",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 10 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d7b98663729f3914b4f9",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin 30 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e8e3215d66da2f73f83d",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin 12 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c0d568db6c55ba9a60f9",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c572f0f6022ca8722930",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c546ebd7defe56a2f9e3",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b60450a663a7f1626163",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e4b5897ee87ce83fe306",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND 5-Year TIPS Yield (%) up, BUY Bitcoin",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "5-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d5f3b1afaea7ae07fe72",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 25 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ea9fc339556a711ae7f9",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cf4e2d35253128ad628c",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 5-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "5-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e8d8a2515ce2b3b43401",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND QQQ Daily Close Price up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "da1c767187eb9c78ce70",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 25 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c2e5e8da025f3abc5992",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "dcd432405b4b7c2b0b89",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d987cad3b06fe8cb85e4",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c2bbec4984ffe6d9e433",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND SPY Daily Close Price up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e2e5e728953bde10beac",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d17ca6a9862784b9c1c4",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c97e7cd7f895ea08ec25",
+    "name": "Unknown Strategy",
+    "description": "When Baltic Dry Index increases, BUY Bitcoin 10 days later",
+    "excel_names": [
+      "Baltic Dry Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b65b155b03cefea69332",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f18b58ef7cf401efbf8d",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cb859b319833af214c6b",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year TIPS Yield (%) up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ba045f9012c4250b85e7",
+    "name": "Unknown Strategy",
+    "description": "Gold Daily Close Price shows strong positive correlation (r=0.91) with Bitcoin. Entry: When Gold Daily Close Price moves >2% in same direction. Position sizing: Fixed 100% of capital per trade. Risk management: Stop loss at 2.0x ATR, Take profit at 3.0x ATR. Hold period: 3 days maximum.",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "bb31e2999874b6b56dc1",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price increases, BUY Bitcoin",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d7912094f1bf7374d2c2",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b6feaff0475f6d0750b2",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b470ba915ef7be9d9482",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "eca4d2ae04fa7e6b652b",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 7 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d56872bc0673216c327e",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 16 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "d4cdaf27b2f0429dc44d",
+    "name": "Unknown Strategy",
+    "description": "When CoinGecko ETH Daily Volume increases, BUY Bitcoin 28 days later",
+    "excel_names": [
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b78521d511db4e031253",
+    "name": "Unknown Strategy",
+    "description": "When 5-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up, BUY Bitcoin",
+    "excel_names": [
+      "5-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "b92037144d048c893f91",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin 2 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cb819c7b969e8e08b5cc",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) increases, BUY Bitcoin 5 days later",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "e8e5ecf91a15d987a104",
+    "name": "Unknown Strategy",
+    "description": "When 30-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up AND SPY Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "30-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "SPY Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "c167669e9ba0b6997837",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) up AND US Equity Market Capitalization (Billions USD) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "US Equity Market Capitalization (Billions USD)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "cacae74f3f32f19761e0",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year TIPS Yield (%) increases, BUY Bitcoin 11 days later",
+    "excel_names": [
+      "10-Year TIPS Yield (%)",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f684bc9af14c2e06f68a",
+    "name": "Unknown Strategy",
+    "description": "When US Federal Funds Rate increases, BUY Bitcoin 10 days later",
+    "excel_names": [
+      "US Federal Funds Rate",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f7faa6f379813e908e7c",
+    "name": "Unknown Strategy",
+    "description": "When Gold Daily Close Price up AND CoinGecko ETH Daily Volume up, BUY Bitcoin 1 days later",
+    "excel_names": [
+      "Gold Daily Close Price",
+      "CoinGecko ETH Daily Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f2dbbb8c7140c811f0a1",
+    "name": "Unknown Strategy",
+    "description": "When 10-Year Treasury Yield (%) up AND QQQ Daily Close Price up, BUY Bitcoin",
+    "excel_names": [
+      "10-Year Treasury Yield (%)",
+      "QQQ Daily Close Price",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "fd33ed110c39178d8c4b",
+    "name": "Unknown Strategy",
+    "description": "When 20-Year TIPS Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 3 days later",
+    "excel_names": [
+      "20-Year TIPS Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f963624b1285f8b47b70",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 21 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "f236fdcb9e4365d11da4",
+    "name": "Unknown Strategy",
+    "description": "When WTI Crude Oil Price (USD/Barrel) up AND 10-Year Treasury Yield (%) up AND DefiLlama DEX Historical Volume up, BUY Bitcoin 4 days later",
+    "excel_names": [
+      "WTI Crude Oil Price (USD/Barrel)",
+      "10-Year Treasury Yield (%)",
+      "DefiLlama DEX Historical Volume",
+      "Bitcoin Daily Close Price"
+    ]
+  },
+  {
+    "id": "ff4e50ef2de244858401",
+    "name": "Unknown Strategy",
+    "description": "When Fear & Greed Index increases, BUY Bitcoin 9 days later",
+    "excel_names": [
+      "Fear & Greed Index",
+      "Bitcoin Daily Close Price"
+    ]
   }
 ]
