@@ -309,6 +309,53 @@ class MonteCarloSimulator:
         
         return results
     
+    def _detect_strategy_variables(self, strategy):
+        """
+        Detect variables used by a strategy from its excel_names field
+        
+        Args:
+            strategy: Strategy dictionary with excel_names field
+            
+        Returns:
+            list: Variable names used by the strategy
+        """
+        if not strategy or 'excel_names' not in strategy:
+            return ['BTC']  # Default to Bitcoin-only
+        
+        variables = strategy['excel_names']
+        if not variables:
+            return ['BTC']
+        
+        # Always ensure BTC is included if not already present
+        if 'Bitcoin Daily Close Price' not in variables:
+            variables = ['Bitcoin Daily Close Price'] + list(variables)
+        
+        return variables
+    
+    def _map_variables_to_codes(self, variables):
+        """
+        Map variable names to short codes for correlation matrix lookup
+        
+        Args:
+            variables: List of variable names
+            
+        Returns:
+            list: Corresponding short codes
+        """
+        from regime_correlations import VARIABLE_NAME_MAPPING
+        
+        codes = []
+        for var in variables:
+            if var in VARIABLE_NAME_MAPPING:
+                codes.append(VARIABLE_NAME_MAPPING[var])
+            elif var == 'BTC':
+                codes.append('BTC')
+            else:
+                # Default mapping for unmapped variables
+                codes.append(var.replace(' ', '_').upper())
+        
+        return codes
+    
     def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
                                    market_condition=None, progress_callback=None, required_variables=None):
         """
