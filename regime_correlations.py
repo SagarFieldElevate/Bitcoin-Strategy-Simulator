@@ -3,53 +3,29 @@ Regime-specific correlation matrices for different market conditions.
 These correlations reflect how assets typically behave together during various market scenarios.
 """
 
+# Daily frequency variables from the screenshot
+DAILY_VARIABLES = [
+    "BTC", "GOLD", "WTI", "SPY", "QQQ", 
+    "TREASURY_10Y", "TIPS_10Y", "TIPS_5Y", "TIPS_20Y", "TIPS_30Y",
+    "ETH_VOLUME", "DEX_VOLUME", "FEAR_GREED"
+]
+
 REGIME_CORRELATIONS = {
     "HIGH_VOL_DOWN": {
         # Market crash scenario - flight to quality, risk-off behavior
-        "BTC":  {"BTC": 1.0, "GOLD": -0.3, "SPY": 0.7, "TIPS": -0.4},
-        "GOLD": {"BTC": -0.3, "GOLD": 1.0, "SPY": -0.5, "TIPS": 0.3},
-        "SPY":  {"BTC": 0.7, "GOLD": -0.5, "SPY": 1.0, "TIPS": -0.6},
-        "TIPS": {"BTC": -0.4, "GOLD": 0.3, "SPY": -0.6, "TIPS": 1.0}
-    },
-    
-    "HIGH_VOL_UP": {
-        # Bull market with high volatility - risk-on behavior with momentum
-        "BTC":  {"BTC": 1.0, "GOLD": -0.2, "SPY": 0.6, "TIPS": -0.5},
-        "GOLD": {"BTC": -0.2, "GOLD": 1.0, "SPY": -0.1, "TIPS": 0.2},
-        "SPY":  {"BTC": 0.6, "GOLD": -0.1, "SPY": 1.0, "TIPS": -0.4},
-        "TIPS": {"BTC": -0.5, "GOLD": 0.2, "SPY": -0.4, "TIPS": 1.0}
-    },
-    
-    "HIGH_VOL_STABLE": {
-        # High volatility sideways - choppy markets, mixed correlations
-        "BTC":  {"BTC": 1.0, "GOLD": 0.1, "SPY": 0.3, "TIPS": -0.2},
-        "GOLD": {"BTC": 0.1, "GOLD": 1.0, "SPY": -0.1, "TIPS": 0.1},
-        "SPY":  {"BTC": 0.3, "GOLD": -0.1, "SPY": 1.0, "TIPS": -0.2},
-        "TIPS": {"BTC": -0.2, "GOLD": 0.1, "SPY": -0.2, "TIPS": 1.0}
-    },
-    
-    "STABLE_VOL_UP": {
-        # Stable bull market - steady risk-on, moderate correlations
-        "BTC":  {"BTC": 1.0, "GOLD": 0.0, "SPY": 0.4, "TIPS": -0.3},
-        "GOLD": {"BTC": 0.0, "GOLD": 1.0, "SPY": 0.1, "TIPS": 0.2},
-        "SPY":  {"BTC": 0.4, "GOLD": 0.1, "SPY": 1.0, "TIPS": -0.2},
-        "TIPS": {"BTC": -0.3, "GOLD": 0.2, "SPY": -0.2, "TIPS": 1.0}
-    },
-    
-    "STABLE_VOL_DOWN": {
-        # Stable bear market - gradual decline, moderate flight to quality
-        "BTC":  {"BTC": 1.0, "GOLD": -0.1, "SPY": 0.5, "TIPS": -0.2},
-        "GOLD": {"BTC": -0.1, "GOLD": 1.0, "SPY": -0.3, "TIPS": 0.4},
-        "SPY":  {"BTC": 0.5, "GOLD": -0.3, "SPY": 1.0, "TIPS": -0.4},
-        "TIPS": {"BTC": -0.2, "GOLD": 0.4, "SPY": -0.4, "TIPS": 1.0}
-    },
-    
-    "STABLE_VOL_STABLE": {
-        # Calm sideways market - low correlations, independent movements
-        "BTC":  {"BTC": 1.0, "GOLD": 0.1, "SPY": 0.2, "TIPS": -0.1},
-        "GOLD": {"BTC": 0.1, "GOLD": 1.0, "SPY": 0.0, "TIPS": 0.1},
-        "SPY":  {"BTC": 0.2, "GOLD": 0.0, "SPY": 1.0, "TIPS": -0.1},
-        "TIPS": {"BTC": -0.1, "GOLD": 0.1, "SPY": -0.1, "TIPS": 1.0}
+        "BTC":  {"BTC": 1.0, "GOLD": -0.3, "WTI": 0.4, "SPY": 0.7, "QQQ": 0.8, "TREASURY_10Y": -0.4, "TIPS_10Y": -0.3, "TIPS_5Y": -0.2, "TIPS_20Y": -0.4, "TIPS_30Y": -0.3, "ETH_VOLUME": 0.6, "DEX_VOLUME": 0.5, "FEAR_GREED": -0.8},
+        "GOLD": {"BTC": -0.3, "GOLD": 1.0, "WTI": -0.2, "SPY": -0.5, "QQQ": -0.6, "TREASURY_10Y": 0.3, "TIPS_10Y": 0.4, "TIPS_5Y": 0.3, "TIPS_20Y": 0.4, "TIPS_30Y": 0.4, "ETH_VOLUME": -0.4, "DEX_VOLUME": -0.3, "FEAR_GREED": 0.4},
+        "WTI":  {"BTC": 0.4, "GOLD": -0.2, "WTI": 1.0, "SPY": 0.3, "QQQ": 0.2, "TREASURY_10Y": -0.3, "TIPS_10Y": -0.2, "TIPS_5Y": -0.1, "TIPS_20Y": -0.3, "TIPS_30Y": -0.2, "ETH_VOLUME": 0.3, "DEX_VOLUME": 0.2, "FEAR_GREED": -0.3},
+        "SPY":  {"BTC": 0.7, "GOLD": -0.5, "WTI": 0.3, "SPY": 1.0, "QQQ": 0.9, "TREASURY_10Y": -0.6, "TIPS_10Y": -0.5, "TIPS_5Y": -0.4, "TIPS_20Y": -0.6, "TIPS_30Y": -0.5, "ETH_VOLUME": 0.4, "DEX_VOLUME": 0.3, "FEAR_GREED": -0.7},
+        "QQQ":  {"BTC": 0.8, "GOLD": -0.6, "WTI": 0.2, "SPY": 0.9, "QQQ": 1.0, "TREASURY_10Y": -0.7, "TIPS_10Y": -0.6, "TIPS_5Y": -0.5, "TIPS_20Y": -0.7, "TIPS_30Y": -0.6, "ETH_VOLUME": 0.5, "DEX_VOLUME": 0.4, "FEAR_GREED": -0.8},
+        "TREASURY_10Y": {"BTC": -0.4, "GOLD": 0.3, "WTI": -0.3, "SPY": -0.6, "QQQ": -0.7, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.8, "TIPS_5Y": 0.7, "TIPS_20Y": 0.9, "TIPS_30Y": 0.8, "ETH_VOLUME": -0.5, "DEX_VOLUME": -0.4, "FEAR_GREED": 0.5},
+        "TIPS_10Y": {"BTC": -0.3, "GOLD": 0.4, "WTI": -0.2, "SPY": -0.5, "QQQ": -0.6, "TREASURY_10Y": 0.8, "TIPS_10Y": 1.0, "TIPS_5Y": 0.9, "TIPS_20Y": 0.9, "TIPS_30Y": 0.9, "ETH_VOLUME": -0.4, "DEX_VOLUME": -0.3, "FEAR_GREED": 0.4},
+        "TIPS_5Y": {"BTC": -0.2, "GOLD": 0.3, "WTI": -0.1, "SPY": -0.4, "QQQ": -0.5, "TREASURY_10Y": 0.7, "TIPS_10Y": 0.9, "TIPS_5Y": 1.0, "TIPS_20Y": 0.8, "TIPS_30Y": 0.7, "ETH_VOLUME": -0.3, "DEX_VOLUME": -0.2, "FEAR_GREED": 0.3},
+        "TIPS_20Y": {"BTC": -0.4, "GOLD": 0.4, "WTI": -0.3, "SPY": -0.6, "QQQ": -0.7, "TREASURY_10Y": 0.9, "TIPS_10Y": 0.9, "TIPS_5Y": 0.8, "TIPS_20Y": 1.0, "TIPS_30Y": 0.9, "ETH_VOLUME": -0.5, "DEX_VOLUME": -0.4, "FEAR_GREED": 0.5},
+        "TIPS_30Y": {"BTC": -0.3, "GOLD": 0.4, "WTI": -0.2, "SPY": -0.5, "QQQ": -0.6, "TREASURY_10Y": 0.8, "TIPS_10Y": 0.9, "TIPS_5Y": 0.7, "TIPS_20Y": 0.9, "TIPS_30Y": 1.0, "ETH_VOLUME": -0.4, "DEX_VOLUME": -0.3, "FEAR_GREED": 0.4},
+        "ETH_VOLUME": {"BTC": 0.6, "GOLD": -0.4, "WTI": 0.3, "SPY": 0.4, "QQQ": 0.5, "TREASURY_10Y": -0.5, "TIPS_10Y": -0.4, "TIPS_5Y": -0.3, "TIPS_20Y": -0.5, "TIPS_30Y": -0.4, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.7, "FEAR_GREED": -0.6},
+        "DEX_VOLUME": {"BTC": 0.5, "GOLD": -0.3, "WTI": 0.2, "SPY": 0.3, "QQQ": 0.4, "TREASURY_10Y": -0.4, "TIPS_10Y": -0.3, "TIPS_5Y": -0.2, "TIPS_20Y": -0.4, "TIPS_30Y": -0.3, "ETH_VOLUME": 0.7, "DEX_VOLUME": 1.0, "FEAR_GREED": -0.5},
+        "FEAR_GREED": {"BTC": -0.8, "GOLD": 0.4, "WTI": -0.3, "SPY": -0.7, "QQQ": -0.8, "TREASURY_10Y": 0.5, "TIPS_10Y": 0.4, "TIPS_5Y": 0.3, "TIPS_20Y": 0.5, "TIPS_30Y": 0.4, "ETH_VOLUME": -0.6, "DEX_VOLUME": -0.5, "FEAR_GREED": 1.0}
     }
 }
 

@@ -15,7 +15,8 @@ from regime_correlations import REGIME_CORRELATIONS, get_regime_correlation
 class ScenarioPropagator:
     def __init__(self):
         """Initialize the scenario propagation system."""
-        self.supported_assets = ["BTC", "SPY", "GOLD", "TIPS"]
+        from regime_correlations import DAILY_VARIABLES
+        self.supported_assets = DAILY_VARIABLES
         self.market_conditions = [
             MarketCondition.HIGH_VOL_UP,
             MarketCondition.HIGH_VOL_DOWN,
@@ -181,7 +182,7 @@ def test_scenario_propagation():
     # Test case: BTC crash scenario
     primary_asset = "BTC"
     primary_scenario = MarketCondition.HIGH_VOL_DOWN
-    required_assets = ["BTC", "SPY", "GOLD", "TIPS"]
+    required_assets = ["BTC", "SPY", "GOLD", "WTI", "QQQ", "TREASURY_10Y", "TIPS_10Y", "ETH_VOLUME", "FEAR_GREED"]
     
     print(f"Primary: {primary_asset} = {primary_scenario.value}")
     print()
