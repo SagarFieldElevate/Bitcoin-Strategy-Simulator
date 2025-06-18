@@ -116,11 +116,38 @@ def load_strategies_from_pinecone():
                         
                         for vector_id, vector_data in fetch_response.vectors.items():
                             if hasattr(vector_data, 'metadata') and vector_data.metadata:
+                                metadata = vector_data.metadata
+                                
+                                # Debug logging for metadata extraction
+                                print(f"[METADATA DEBUG] Strategy {vector_id[:8]}:")
+                                print(f"  Available fields: {list(metadata.keys())}")
+                                if 'total_return' in metadata:
+                                    print(f"  total_return: {metadata.get('total_return')}")
+                                if 'sharpe_ratio' in metadata:
+                                    print(f"  sharpe_ratio: {metadata.get('sharpe_ratio')}")
+                                
                                 strategy = {
                                     'id': vector_id,
-                                    'name': vector_data.metadata.get('name', 'Unknown Strategy'),
-                                    'description': vector_data.metadata.get('description', 'No description'),
-                                    'excel_names': vector_data.metadata.get('excel_names', [])
+                                    'name': metadata.get('name', 'Unknown Strategy'),
+                                    'description': metadata.get('description', 'No description'),
+                                    'excel_names': metadata.get('excel_names', []),
+                                    'metadata': {
+                                        'strategy_type': metadata.get('strategy_type', 'Unknown'),
+                                        'total_return': float(metadata.get('total_return', 0)),
+                                        'sharpe_ratio': float(metadata.get('sharpe_ratio', 0)),
+                                        'max_drawdown': float(metadata.get('max_drawdown', 0)),
+                                        'success_rate': float(metadata.get('success_rate', 0)),
+                                        'avg_holding_days': metadata.get('avg_holding_days', 'N/A'),
+                                        'total_trades': metadata.get('total_trades', 'N/A'),
+                                        'quality_score': metadata.get('quality_score', 'N/A'),
+                                        'dependencies': metadata.get('dependencies', []),
+                                        # Extract all other metadata fields
+                                        **{k: v for k, v in metadata.items() if k not in [
+                                            'name', 'description', 'excel_names', 'strategy_type',
+                                            'total_return', 'sharpe_ratio', 'max_drawdown', 'success_rate',
+                                            'avg_holding_days', 'total_trades', 'quality_score', 'dependencies'
+                                        ]}
+                                    }
                                 }
                                 
                                 # Include all strategies regardless of frequency
