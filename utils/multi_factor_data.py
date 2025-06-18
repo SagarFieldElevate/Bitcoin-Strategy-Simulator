@@ -298,13 +298,6 @@ class MultiFactorDataFetcher:
         """
         # Use the enhanced method for all variables
         return self.find_vector_for_variable_enhanced(variable_name)
-            
-            print(f"No confident match found for {variable_name}")
-            return None
-            
-        except Exception as e:
-            print(f"Error finding vector for {variable_name}: {e}")
-            return None
     
     def fetch_data_from_pinecone(self, vector_info):
         """

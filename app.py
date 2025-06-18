@@ -654,10 +654,15 @@ if st.session_state.bitcoin_data is not None:
                                                 if test_data is None or len(test_data) < 10:
                                                     missing_data.append(f'{var} (Gold prices)')
                                             else:
-                                                # For other variables, use the LLM-based search
+                                                # For other variables, use the enhanced LLM-based search
                                                 vector_info = data_fetcher.find_vector_for_variable(var)
                                                 if not vector_info or vector_info.get('confidence', 0) < 0.3:
                                                     missing_data.append(f'{var} (Economic data)')
+                                                else:
+                                                    # Test actual data extraction
+                                                    test_data = data_fetcher.fetch_data_from_pinecone(vector_info)
+                                                    if test_data is None or len(test_data) < 10:
+                                                        missing_data.append(f'{var} (Data extraction failed)')
                                         except Exception as e:
                                             print(f"Data validation failed for {var}: {e}")
                                             missing_data.append(f'{var} (Data access error)')
