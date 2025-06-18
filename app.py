@@ -290,36 +290,30 @@ search_term = st.sidebar.text_input(
 filtered_strategies = strategies if strategies else []
 
 if data_filter.startswith("BTC-only") and strategies:
-    # Simple heuristic-based filtering for BTC-only strategies
+    # Filter for BTC-only strategies (only use Bitcoin variables)
     btc_strategies = []
     for strategy in strategies:
-        description = strategy.get('description', '').lower()
         excel_names = strategy.get('excel_names', [])
         
-        # Quick check for obvious external dependencies
-        has_external = any(keyword in description for keyword in [
-            'spy', 'vix', 'gold', 'oil', 'treasury', 'bond', 'dollar', 'eth', 'coingecko'
-        ])
+        # Check if strategy only uses Bitcoin-related variables
+        non_btc_variables = [name for name in excel_names if 'bitcoin' not in name.lower() and 'btc' not in name.lower()]
         
-        if not has_external and not any('spy' in name.lower() or 'vix' in name.lower() for name in excel_names):
+        if len(non_btc_variables) == 0:
             btc_strategies.append(strategy)
     
     filtered_strategies = btc_strategies
     st.sidebar.info(f"📊 {len(filtered_strategies)} BTC-only strategies")
 
 elif data_filter.startswith("Multi-factor") and strategies:
-    # Simple heuristic-based filtering for multi-factor strategies
+    # Filter for multi-factor strategies (use external variables)
     multi_strategies = []
     for strategy in strategies:
-        description = strategy.get('description', '').lower()
         excel_names = strategy.get('excel_names', [])
         
-        # Quick check for obvious external dependencies
-        has_external = any(keyword in description for keyword in [
-            'spy', 'vix', 'gold', 'oil', 'treasury', 'bond', 'dollar', 'eth', 'coingecko'
-        ])
+        # Check if strategy uses any non-Bitcoin variables
+        non_btc_variables = [name for name in excel_names if 'bitcoin' not in name.lower() and 'btc' not in name.lower()]
         
-        if has_external or any('spy' in name.lower() or 'vix' in name.lower() for name in excel_names):
+        if len(non_btc_variables) > 0:
             multi_strategies.append(strategy)
     
     filtered_strategies = multi_strategies
