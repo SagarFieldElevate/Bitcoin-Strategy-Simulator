@@ -56,7 +56,7 @@ def check_openai_connection():
     except Exception as e:
         return False, f"Connection failed: {str(e)}"
 
-# Load strategies from Pinecone (simple and fast)
+# Load strategies from Pinecone (with simple caching)
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def load_strategies_fast(_pinecone_client):
     """Load all strategies from Pinecone and filter for daily-frequency only"""
@@ -221,19 +221,16 @@ else:
 # Strategy selection
 st.sidebar.header("Strategy Selection")
 
-# Load strategies quickly from Pinecone
+# Load strategies with caching
 strategies = []
-if pinecone_client:
-    try:
-        strategies = load_strategies_fast(pinecone_client)
-        if strategies:
-            st.sidebar.success(f"Loaded {len(strategies)} strategies")
-        else:
-            st.sidebar.warning("No strategies found in database")
-    except Exception as e:
-        st.sidebar.error(f"Error loading strategies: {str(e)}")
-else:
-    st.sidebar.warning("Pinecone connection required to load strategies")
+try:
+    strategies = load_strategies_cached()
+    if strategies:
+        st.sidebar.success(f"Loaded {len(strategies)} strategies")
+    else:
+        st.sidebar.warning("No strategies found in database")
+except Exception as e:
+    st.sidebar.error(f"Error loading strategies: {str(e)}")
 
 # Strategy search and filtering
 st.sidebar.subheader("Strategy Selection")
