@@ -361,6 +361,7 @@ class MonteCarloSimulator:
         """
         Run multi-factor Monte Carlo simulation with dynamic variable detection and regime-specific correlations
         """
+        import pandas as pd
         from .multi_factor_data import MultiFactorDataFetcher
         from .scenario_propagation import ScenarioPropagator
         from regime_correlations import REGIME_CORRELATIONS, VARIABLE_NAME_MAPPING
