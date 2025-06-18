@@ -15,8 +15,8 @@ from regime_correlations import REGIME_CORRELATIONS, get_regime_correlation
 class ScenarioPropagator:
     def __init__(self):
         """Initialize the scenario propagation system."""
-        from regime_correlations import DAILY_VARIABLES
-        self.supported_assets = DAILY_VARIABLES
+        from regime_correlations import VARIABLE_NAME_MAPPING
+        self.supported_assets = list(VARIABLE_NAME_MAPPING.values())
         self.market_conditions = [
             MarketCondition.HIGH_VOL_UP,
             MarketCondition.HIGH_VOL_DOWN,

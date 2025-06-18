@@ -3,12 +3,57 @@ Regime-specific correlation matrices for different market conditions.
 These correlations reflect how assets typically behave together during various market scenarios.
 """
 
-# Daily frequency variables from the screenshot
-DAILY_VARIABLES = [
-    "BTC", "GOLD", "WTI", "SPY", "QQQ", 
-    "TREASURY_10Y", "TIPS_10Y", "TIPS_5Y", "TIPS_20Y", "TIPS_30Y",
-    "ETH_VOLUME", "DEX_VOLUME", "FEAR_GREED"
-]
+# Daily frequency variables from the screenshot (as set for efficient lookup)
+DAILY_VARIABLES = {
+    "BITCOIN DAILY CLOSE PRICE",
+    "GOLD DAILY CLOSE PRICE", 
+    "WTI CRUDE OIL PRICE",
+    "SPY DAILY CLOSE PRICE",
+    "QQQ DAILY CLOSE PRICE",
+    "10-YEAR TREASURY YIELD",
+    "10-YEAR TIPS YIELD",
+    "5-YEAR TIPS YIELD", 
+    "20-YEAR TIPS YIELD",
+    "30-YEAR TIPS YIELD",
+    "TREASURY_YIELD",
+    "COINGECKO ETH DAILY VOLUME",
+    "DEFILLAMA DEX HISTORICAL VOLUME",
+    "FEAR & GREED INDEX"
+}
+
+# Mapping from full names to short codes for correlation matrices
+VARIABLE_NAME_MAPPING = {
+    "BITCOIN DAILY CLOSE PRICE": "BTC",
+    "GOLD DAILY CLOSE PRICE": "GOLD",
+    "WTI CRUDE OIL PRICE": "WTI", 
+    "SPY DAILY CLOSE PRICE": "SPY",
+    "QQQ DAILY CLOSE PRICE": "QQQ",
+    "10-YEAR TREASURY YIELD": "TREASURY_10Y",
+    "10-YEAR TIPS YIELD": "TIPS_10Y",
+    "5-YEAR TIPS YIELD": "TIPS_5Y",
+    "20-YEAR TIPS YIELD": "TIPS_20Y", 
+    "30-YEAR TIPS YIELD": "TIPS_30Y",
+    "TREASURY_YIELD": "TREASURY_10Y",  # Map to same as 10-year
+    "COINGECKO ETH DAILY VOLUME": "ETH_VOLUME",
+    "DEFILLAMA DEX HISTORICAL VOLUME": "DEX_VOLUME",
+    "FEAR & GREED INDEX": "FEAR_GREED"
+}
+
+def is_daily_only_strategy(strategy):
+    """
+    Check if a strategy only uses daily frequency variables
+    
+    Args:
+        strategy: Strategy dictionary with excel_names field
+        
+    Returns:
+        bool: True if all excel_names are in DAILY_VARIABLES
+    """
+    excel_names = strategy.get("excel_names", [])
+    if not excel_names:
+        return True  # No variables needed, consider it valid
+    
+    return all(var in DAILY_VARIABLES for var in excel_names)
 
 REGIME_CORRELATIONS = {
     "HIGH_VOL_DOWN": {

@@ -59,7 +59,7 @@ def check_openai_connection():
 # Load strategies from Pinecone (simple and fast)
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def load_strategies_fast(_pinecone_client):
-    """Load all strategy descriptions from Pinecone quickly"""
+    """Load all daily-frequency strategy descriptions from Pinecone quickly"""
     if not _pinecone_client:
         return []
     
@@ -125,13 +125,19 @@ def load_strategies_fast(_pinecone_client):
                         description = match.metadata.get('description', '')
                         
                         if description and strategy_id not in existing_ids:
-                            strategies.append({
+                            # Filter for daily-only strategies
+                            from regime_correlations import is_daily_only_strategy
+                            strategy_dict = {
                                 'id': strategy_id,
                                 'description': description,
-                                'metadata': match.metadata
-                            })
-                            existing_ids.add(strategy_id)
-                            new_strategies_count += 1
+                                'metadata': match.metadata,
+                                'excel_names': match.metadata.get('excel_names', [])
+                            }
+                            
+                            if is_daily_only_strategy(strategy_dict):
+                                strategies.append(strategy_dict)
+                                existing_ids.add(strategy_id)
+                                new_strategies_count += 1
             
             if new_strategies_count > 0:
                 print(f"Query {i+1}: Found {new_strategies_count} new strategies (total: {len(strategies)})")
