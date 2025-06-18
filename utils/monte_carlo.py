@@ -277,12 +277,24 @@ class MonteCarloSimulator:
             # Execute strategy
             returns = self.execute_strategy(ohlcv_df, selected_strategy)
             
+            # Debug strategy execution
+            if i == 0:  # Debug first simulation only
+                print(f"[DEBUG] Strategy returns shape: {returns.shape if hasattr(returns, 'shape') else 'N/A'}")
+                print(f"[DEBUG] Returns sum: {returns.sum() if hasattr(returns, 'sum') else 'N/A'}")
+                print(f"[DEBUG] Returns type: {type(returns)}")
+            
             # Calculate equity curve
             equity = self.calculate_equity_curve(returns)
+            
+            if i == 0:  # Debug first simulation only
+                print(f"[DEBUG] Equity curve shape: {equity.shape if hasattr(equity, 'shape') else 'N/A'}")
+                print(f"[DEBUG] Final equity: {equity.iloc[-1] if len(equity) > 0 else 'Empty'}")
             
             if len(equity) == 0 or equity.iloc[-1] <= 0 or pd.isna(equity.iloc[-1]):
                 cagr_values.append(-100.0)
                 drawdown_values.append(-100.0)
+                if i == 0:
+                    print(f"[DEBUG] Failed equity calculation - setting CAGR to -100%")
             else:
                 # Calculate CAGR
                 final_equity = equity.iloc[-1]
