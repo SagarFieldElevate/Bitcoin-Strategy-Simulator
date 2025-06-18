@@ -551,15 +551,15 @@ if st.session_state.bitcoin_data is not None:
                             
                             from utils.strategy_processor import StrategyProcessor
                             processor = StrategyProcessor()
-                            processed_strategy = processor.generate_conditions(selected_strategy_data['metadata'])
+                            processed_strategy = processor.generate_conditions(selected_strategy_data)
                             
                             # Step 3: Smart routing
                             overall_progress.progress(30, text="Determining simulation mode...")
                             status_placeholder.info("🧠 Smart routing: selecting optimal simulation engine")
                             
                             router = SimulationRouter()
-                            simulation_mode = router.select_simulation_mode(selected_strategy_data['metadata'])
-                            required_variables = router.get_required_variables(selected_strategy_data['metadata'], simulation_mode)
+                            simulation_mode = router.select_simulation_mode(selected_strategy_data)
+                            required_variables = router.get_required_variables(selected_strategy_data, simulation_mode)
                             
                             # Multi-factor strategy confirmation
                             if simulation_mode == 'multi_factor':
