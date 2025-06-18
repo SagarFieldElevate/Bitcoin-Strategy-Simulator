@@ -11,168 +11,293 @@ from openai import OpenAI
 
 class MultiFactorDataFetcher:
     def __init__(self, pinecone_client=None):
-        """Initialize the multi-factor data fetcher"""
+        """Initialize the multi-factor data fetcher with enhanced discovery capabilities"""
         self.pinecone_client = pinecone_client
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.intelligence_index_name = "intelligence-main"
         
         # Cache for found vectors to avoid repeated LLM calls
         self.vector_cache = {}
-    
-    def find_vector_for_variable(self, variable_name):
-        """
-        Use LLM to find the best matching vector in intelligence-main index for a given variable
-        """
-        if variable_name in self.vector_cache:
-            return self.vector_cache[variable_name]
         
-        if not self.pinecone_client:
+        # Enhanced variable configurations for comprehensive LLM access
+        self.enhanced_configs = {
+            'WTI': {
+                'search_terms': ['wti crude oil', 'west texas intermediate', 'crude oil price', 'oil futures'],
+                'metadata_patterns': ['wti', 'crude', 'oil', 'petroleum', 'energy'],
+                'excel_names': ['WTI', 'CRUDE_OIL', 'OIL_PRICE'],
+                'symbols': ['WTI', 'CL', 'CRUDE']
+            },
+            'OIL': {
+                'search_terms': ['crude oil', 'oil price', 'petroleum price', 'energy commodity'],
+                'metadata_patterns': ['oil', 'crude', 'petroleum', 'energy'],
+                'excel_names': ['OIL', 'CRUDE_OIL', 'OIL_PRICE'],
+                'symbols': ['OIL', 'WTI', 'CL']
+            },
+            'GOLD': {
+                'search_terms': ['gold price', 'gold commodity', 'precious metal gold', 'bullion'],
+                'metadata_patterns': ['gold', 'precious', 'metal', 'bullion'],
+                'excel_names': ['GOLD', 'GOLD_PRICE', 'XAU'],
+                'symbols': ['GOLD', 'GLD', 'XAU']
+            },
+            'SPY': {
+                'search_terms': ['s&p 500', 'spy etf', 'stock market index', 'equity index'],
+                'metadata_patterns': ['spy', 'sp500', 'stock', 'index'],
+                'excel_names': ['SPY', 'SP500', 'S&P500'],
+                'symbols': ['SPY', 'SPX']
+            },
+            'VIX': {
+                'search_terms': ['volatility index', 'vix index', 'fear gauge', 'market volatility'],
+                'metadata_patterns': ['vix', 'volatility', 'fear'],
+                'excel_names': ['VIX', 'VOLATILITY'],
+                'symbols': ['VIX']
+            },
+            'TIPS': {
+                'search_terms': ['treasury inflation protected securities', 'tips bonds', 'inflation bonds'],
+                'metadata_patterns': ['tips', 'treasury', 'inflation', 'bond'],
+                'excel_names': ['TIPS', 'TIPS_10Y'],
+                'symbols': ['TIPS', 'TIP']
+            }
+        }
+    
+    def find_vector_for_variable_enhanced(self, variable_name):
+        """
+        Enhanced LLM-powered variable discovery with comprehensive search strategies
+        """
+        if not self.pinecone_client or not self.pinecone_client.pc:
             print(f"No Pinecone client available for {variable_name}")
             return None
         
-        # Connect to intelligence-main index
+        variable_upper = variable_name.upper()
+        
+        # Check cache first
+        if variable_upper in self.vector_cache:
+            return self.vector_cache[variable_upper]
+        
         try:
             intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
         except Exception as e:
             print(f"Could not connect to intelligence-main index: {e}")
             return None
         
-        # Search for vectors with semantic similarity to the variable name
-        try:
-            # Direct pattern matching for known variables
-            variable_patterns = {
-                'GOLD': 'Gold Daily Close Price',
-                'GLD': 'Gold Daily Close Price', 
-                'XAU': 'Gold Daily Close Price',
-                'GOLD_PRICE': 'Gold Daily Close Price',
-                'WTI': 'Oil',
-                'OIL': 'Oil',
-                'CRUDE': 'Oil',
-                'SPY': 'S&P 500',
-                'SP500': 'S&P 500',
-                'VIX': 'VIX',
-                'TIPS': 'Treasury'
-            }
-            
-            variable_upper = variable_name.upper()
-            
-            # Generate embedding for the variable name using OpenAI
-            search_text = f"{variable_name} price data time series economic indicator"
-            
-            # For known variables like GOLD, use targeted search patterns
-            if variable_upper in variable_patterns:
-                target_name = variable_patterns[variable_upper]
-                # Use search patterns that are more likely to find specific data types
-                search_queries = [
-                    [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],  # Commodities pattern
-                    [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], # Metals pattern
-                    [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], # Precious metals
-                    [0.001 if i % 17 == 0 else 0.0 for i in range(1536)], # Alternative
-                    [0.0] * 1536,  # Fallback basic query
-                ]
-            else:
-                # Default search patterns for unknown variables
-                search_queries = [
-                    [0.0] * 1536,  # Basic query
-                    [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
-                    [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
-                    [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
-                ]
-            
-            all_vector_options = []
-            
-            for query_vector in search_queries:
+        print(f"Enhanced LLM search for {variable_name}...")
+        
+        # Get enhanced configuration
+        config = self.enhanced_configs.get(variable_upper, {
+            'search_terms': [variable_name.lower()],
+            'metadata_patterns': [variable_name.lower()],
+            'excel_names': [variable_upper],
+            'symbols': [variable_upper]
+        })
+        
+        all_candidates = []
+        
+        # Strategy 1: Exact metadata matching
+        for excel_name in config['excel_names']:
+            try:
                 response = intelligence_index.query(
-                    vector=query_vector,
-                    top_k=50,  # Increase search depth
-                    include_metadata=True
+                    vector=[0.0] * 1536,
+                    top_k=50,
+                    include_metadata=True,
+                    filter={"excel_name": {"$eq": excel_name}}
                 )
-                
-                if hasattr(response, 'matches') and response.matches:
-                    for match in response.matches:
-                        if hasattr(match, 'metadata') and match.metadata:
-                            vector_id = match.id
-                            metadata = match.metadata
-                            name = metadata.get('excel_name', metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id))))
-                            description = metadata.get('description', metadata.get('info', metadata.get('raw_text', '')))
-                            
-                            # Check if we already have this vector
-                            if not any(v['id'] == vector_id for v in all_vector_options):
-                                all_vector_options.append({
-                                    'id': vector_id,
-                                    'name': name,
-                                    'description': description,
-                                    'metadata': metadata
-                                })
-                
-                if len(all_vector_options) >= 100:  # Enough samples
-                    break
-            
-            if not hasattr(response, 'matches') or not response.matches:
-                print(f"No vectors found in intelligence-main for {variable_name}")
-                return None
-            
-            if not all_vector_options:
-                print(f"No valid vectors with metadata found for {variable_name}")
-                return None
-            
-            # Check for direct pattern matches first
-            if variable_upper in variable_patterns:
-                target_pattern = variable_patterns[variable_upper]
-                for vector in all_vector_options:
-                    excel_name = vector.get('name', '')
-                    if target_pattern.lower() in excel_name.lower():
-                        print(f"Direct match found for {variable_name}: {excel_name}")
-                        self.vector_cache[variable_name] = vector
-                        return vector
-            
-            # Use LLM to find the best match
-            prompt = f"""Given this list of available financial data vectors, find the best match for "{variable_name}":
-
-Available vectors:
-{json.dumps(all_vector_options[:10], indent=2)}
-
-Find the vector that best matches "{variable_name}". Look for:
-- WTI/Oil: crude oil, petroleum, energy commodities
-- TIPS/Treasury: treasury bonds, government bonds, interest rates, yields
-- CPI: consumer price index, inflation, price levels
-- DXY: dollar index, currency, USD strength
-- Gold: precious metals, commodities
-- VIX: volatility index, market fear
-- Bitcoin/BTC: cryptocurrency, digital assets
-
-Respond with JSON:
-{{
-  "best_match_id": "vector_id_here",
-  "confidence": 0.8,
-  "reasoning": "explanation"
-}}"""
-
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are an expert at matching financial variables to data sources. Always respond with valid JSON only."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                max_tokens=300
+                all_candidates.extend(self._process_search_response(response, "excel_exact"))
+            except:
+                pass
+        
+        # Strategy 2: Symbol matching
+        for symbol in config['symbols']:
+            try:
+                response = intelligence_index.query(
+                    vector=[0.0] * 1536,
+                    top_k=50,
+                    include_metadata=True,
+                    filter={"symbol": {"$eq": symbol}}
+                )
+                all_candidates.extend(self._process_search_response(response, "symbol_exact"))
+            except:
+                pass
+        
+        # Strategy 3: LLM semantic search
+        if self.openai_client:
+            for search_term in config['search_terms']:
+                try:
+                    # Generate embedding
+                    embedding_response = self.openai_client.embeddings.create(
+                        input=f"{search_term} daily price data time series economic financial indicator",
+                        model="text-embedding-ada-002"
+                    )
+                    
+                    query_vector = embedding_response.data[0].embedding
+                    
+                    response = intelligence_index.query(
+                        vector=query_vector,
+                        top_k=50,
+                        include_metadata=True
+                    )
+                    
+                    all_candidates.extend(self._process_search_response(response, "semantic"))
+                    
+                except Exception as e:
+                    print(f"LLM semantic search failed for {search_term}: {e}")
+                    continue
+        
+        # Strategy 4: Pattern matching in metadata
+        for pattern in config['metadata_patterns']:
+            try:
+                response = intelligence_index.query(
+                    vector=[0.0] * 1536,
+                    top_k=100,
+                    include_metadata=True,
+                    filter={"description": {"$regex": f".*{pattern}.*"}}
+                )
+                all_candidates.extend(self._process_search_response(response, "pattern"))
+            except:
+                pass
+        
+        # Strategy 5: Comprehensive metadata scan
+        try:
+            response = intelligence_index.query(
+                vector=[0.0] * 1536,
+                top_k=500,
+                include_metadata=True
             )
             
-            result = json.loads(response.choices[0].message.content)
-            best_match_id = result.get('best_match_id')
-            confidence = result.get('confidence', 0)
-            
-            print(f"LLM Variable Matching for {variable_name}:")
-            print(f"  Best match: {best_match_id}")
-            print(f"  Confidence: {confidence}")
-            print(f"  Reasoning: {result.get('reasoning', 'N/A')}")
-            
-            if confidence >= 0.6:  # Only use if confident
-                # Find the full vector data
-                matched_vector = next((v for v in all_vector_options if v['id'] == best_match_id), None)
-                if matched_vector:
-                    self.vector_cache[variable_name] = matched_vector
-                    return matched_vector
+            for match in response.matches:
+                if hasattr(match, 'metadata') and match.metadata:
+                    metadata = match.metadata
+                    
+                    # Check all text fields for our patterns
+                    all_text = ' '.join([
+                        str(metadata.get('excel_name', '')),
+                        str(metadata.get('name', '')),
+                        str(metadata.get('symbol', '')),
+                        str(metadata.get('description', '')),
+                        str(metadata.get('title', '')),
+                        str(metadata.get('raw_text', ''))
+                    ]).lower()
+                    
+                    # Check if any of our search patterns match
+                    for pattern in config['metadata_patterns'] + [variable_name.lower()]:
+                        if pattern in all_text:
+                            all_candidates.append({
+                                'id': match.id,
+                                'metadata': metadata,
+                                'score': getattr(match, 'score', 0),
+                                'match_type': 'comprehensive',
+                                'matched_pattern': pattern
+                            })
+                            break
+        
+        except Exception as e:
+            print(f"Comprehensive scan failed: {e}")
+        
+        if not all_candidates:
+            print(f"No vectors found for {variable_name}")
+            return None
+        
+        # Rank candidates by relevance
+        best_candidate = self._rank_and_select_best(all_candidates, config, variable_name)
+        
+        if best_candidate:
+            # Cache the result
+            self.vector_cache[variable_upper] = best_candidate
+            print(f"Best match for {variable_name}: {best_candidate['id']} (confidence: {best_candidate.get('confidence', 0):.2f})")
+            return best_candidate
+        
+        return None
+    
+    def _process_search_response(self, response, match_type):
+        """Process Pinecone search response"""
+        candidates = []
+        
+        if hasattr(response, 'matches') and response.matches:
+            for match in response.matches:
+                if hasattr(match, 'metadata') and match.metadata:
+                    candidates.append({
+                        'id': match.id,
+                        'metadata': match.metadata,
+                        'score': getattr(match, 'score', 0),
+                        'match_type': match_type
+                    })
+        
+        return candidates
+    
+    def _rank_and_select_best(self, candidates, config, variable_name):
+        """Rank candidates and select the best match"""
+        if not candidates:
+            return None
+        
+        # Remove duplicates
+        unique_candidates = {}
+        for candidate in candidates:
+            vector_id = candidate['id']
+            if vector_id not in unique_candidates or candidate['score'] > unique_candidates[vector_id]['score']:
+                unique_candidates[vector_id] = candidate
+        
+        candidates = list(unique_candidates.values())
+        
+        # Score each candidate
+        scored_candidates = []
+        for candidate in candidates:
+            score = self._calculate_relevance_score(candidate, config, variable_name)
+            scored_candidates.append({
+                **candidate,
+                'confidence': score
+            })
+        
+        # Sort by confidence
+        scored_candidates.sort(key=lambda x: x['confidence'], reverse=True)
+        
+        # Return best if above threshold
+        if scored_candidates and scored_candidates[0]['confidence'] > 0.3:
+            return scored_candidates[0]
+        
+        return None
+    
+    def _calculate_relevance_score(self, candidate, config, variable_name):
+        """Calculate relevance score for a candidate"""
+        score = 0.0
+        metadata = candidate.get('metadata', {})
+        
+        # Base score from match type
+        match_type_scores = {
+            'excel_exact': 1.0,
+            'symbol_exact': 0.9,
+            'semantic': 0.8,
+            'pattern': 0.6,
+            'comprehensive': 0.4
+        }
+        
+        score += match_type_scores.get(candidate.get('match_type', ''), 0.2)
+        
+        # Exact matches bonus
+        excel_name = str(metadata.get('excel_name', '')).upper()
+        symbol = str(metadata.get('symbol', '')).upper()
+        
+        if excel_name in config['excel_names']:
+            score += 0.4
+        if symbol in config['symbols']:
+            score += 0.3
+        
+        # Time series data bonus
+        has_time_series = any(key in metadata for key in [
+            'time_series', 'data', 'values', 'price_data', 'historical_data'
+        ])
+        if has_time_series:
+            score += 0.3
+        
+        # Variable name exact match bonus
+        if variable_name.upper() in excel_name or variable_name.upper() in symbol:
+            score += 0.2
+        
+        return min(score, 1.0)
+
+    def find_vector_for_variable(self, variable_name):
+        """
+        Enhanced LLM-powered variable discovery - now uses the comprehensive search system
+        """
+        # Use the enhanced method for all variables
+        return self.find_vector_for_variable_enhanced(variable_name)
             
             print(f"No confident match found for {variable_name}")
             return None
