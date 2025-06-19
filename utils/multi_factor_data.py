@@ -11,149 +11,182 @@ from openai import OpenAI
 
 class MultiFactorDataFetcher:
     def __init__(self, pinecone_client=None):
-        """Initialize the multi-factor data fetcher with enhanced discovery capabilities"""
+        """Initialize the multi-factor data fetcher"""
         self.pinecone_client = pinecone_client
-        openai_key = os.getenv("OPENAI_API_KEY")
-        self.openai_client = OpenAI(api_key=openai_key) if openai_key else None
+        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.intelligence_index_name = "intelligence-main"
         
         # Cache for found vectors to avoid repeated LLM calls
         self.vector_cache = {}
-        
-        # Enhanced variable configurations for comprehensive LLM access
-        self.enhanced_configs = {
-            'WTI': {
-                'search_terms': ['wti crude oil', 'west texas intermediate', 'crude oil price', 'oil futures'],
-                'metadata_patterns': ['wti', 'crude', 'oil', 'petroleum', 'energy'],
-                'excel_names': ['WTI', 'CRUDE_OIL', 'OIL_PRICE'],
-                'symbols': ['WTI', 'CL', 'CRUDE']
-            },
-            'OIL': {
-                'search_terms': ['crude oil', 'oil price', 'petroleum price', 'energy commodity'],
-                'metadata_patterns': ['oil', 'crude', 'petroleum', 'energy'],
-                'excel_names': ['OIL', 'CRUDE_OIL', 'OIL_PRICE'],
-                'symbols': ['OIL', 'WTI', 'CL']
-            },
-            'GOLD': {
-                'search_terms': ['gold price', 'gold commodity', 'precious metal gold', 'bullion'],
-                'metadata_patterns': ['gold', 'precious', 'metal', 'bullion'],
-                'excel_names': ['GOLD', 'GOLD_PRICE', 'XAU'],
-                'symbols': ['GOLD', 'GLD', 'XAU']
-            },
-            'SPY': {
-                'search_terms': ['s&p 500', 'spy etf', 'stock market index', 'equity index'],
-                'metadata_patterns': ['spy', 'sp500', 'stock', 'index'],
-                'excel_names': ['SPY', 'SP500', 'S&P500'],
-                'symbols': ['SPY', 'SPX']
-            },
-            'VIX': {
-                'search_terms': ['volatility index', 'vix index', 'fear gauge', 'market volatility'],
-                'metadata_patterns': ['vix', 'volatility', 'fear'],
-                'excel_names': ['VIX', 'VOLATILITY'],
-                'symbols': ['VIX']
-            },
-            'TIPS': {
-                'search_terms': ['treasury inflation protected securities', 'tips bonds', 'inflation bonds'],
-                'metadata_patterns': ['tips', 'treasury', 'inflation', 'bond'],
-                'excel_names': ['TIPS', 'TIPS_10Y'],
-                'symbols': ['TIPS', 'TIP']
-            }
-        }
     
-    def find_vector_for_variable_enhanced(self, variable_name):
+    def find_vector_for_variable(self, variable_name):
         """
-        Simplified enhanced variable discovery
+        Use LLM to find the best matching vector in intelligence-main index for a given variable
         """
+        if variable_name in self.vector_cache:
+            return self.vector_cache[variable_name]
+        
         if not self.pinecone_client:
             print(f"No Pinecone client available for {variable_name}")
             return None
         
-        variable_upper = variable_name.upper()
-        
-        # Check cache first
-        if variable_upper in self.vector_cache:
-            return self.vector_cache[variable_upper]
-        
+        # Connect to intelligence-main index
         try:
-            # Use the intelligence-main index directly
-            intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
+            intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
         except Exception as e:
             print(f"Could not connect to intelligence-main index: {e}")
             return None
         
-        print(f"Searching for {variable_name}...")
-        
-        # Simple but effective search
-        search_patterns = [variable_name.upper(), variable_name.lower()]
-        if variable_upper == 'WTI':
-            search_patterns.extend(['crude', 'oil', 'petroleum'])
-        elif variable_upper == 'GOLD':
-            search_patterns.extend(['gold', 'precious'])
-        elif variable_upper == 'SPY':
-            search_patterns.extend(['spy', 'sp500'])
-        
-        best_match = None
-        best_score = 0
-        
-        # Basic search with simple patterns
+        # Search for vectors with semantic similarity to the variable name
         try:
-            response = intelligence_index.query(
-                vector=[0.0] * 1536,
-                top_k=200,
-                include_metadata=True
+            # Direct pattern matching for known variables
+            variable_patterns = {
+                'GOLD': 'Gold Daily Close Price',
+                'GLD': 'Gold Daily Close Price', 
+                'XAU': 'Gold Daily Close Price',
+                'GOLD_PRICE': 'Gold Daily Close Price',
+                'WTI': 'Oil',
+                'OIL': 'Oil',
+                'CRUDE': 'Oil',
+                'SPY': 'S&P 500',
+                'SP500': 'S&P 500',
+                'VIX': 'VIX',
+                'TIPS': 'Treasury'
+            }
+            
+            variable_upper = variable_name.upper()
+            
+            # Generate embedding for the variable name using OpenAI
+            search_text = f"{variable_name} price data time series economic indicator"
+            
+            # For known variables like GOLD, use targeted search patterns
+            if variable_upper in variable_patterns:
+                target_name = variable_patterns[variable_upper]
+                # Use search patterns that are more likely to find specific data types
+                search_queries = [
+                    [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],  # Commodities pattern
+                    [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], # Metals pattern
+                    [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], # Precious metals
+                    [0.001 if i % 17 == 0 else 0.0 for i in range(1536)], # Alternative
+                    [0.0] * 1536,  # Fallback basic query
+                ]
+            else:
+                # Default search patterns for unknown variables
+                search_queries = [
+                    [0.0] * 1536,  # Basic query
+                    [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
+                    [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
+                    [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
+                ]
+            
+            all_vector_options = []
+            
+            for query_vector in search_queries:
+                response = intelligence_index.query(
+                    vector=query_vector,
+                    top_k=50,  # Increase search depth
+                    include_metadata=True
+                )
+                
+                if hasattr(response, 'matches') and response.matches:
+                    for match in response.matches:
+                        if hasattr(match, 'metadata') and match.metadata:
+                            vector_id = match.id
+                            metadata = match.metadata
+                            name = metadata.get('excel_name', metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id))))
+                            description = metadata.get('description', metadata.get('info', metadata.get('raw_text', '')))
+                            
+                            # Check if we already have this vector
+                            if not any(v['id'] == vector_id for v in all_vector_options):
+                                all_vector_options.append({
+                                    'id': vector_id,
+                                    'name': name,
+                                    'description': description,
+                                    'metadata': metadata
+                                })
+                
+                if len(all_vector_options) >= 100:  # Enough samples
+                    break
+            
+            if not hasattr(response, 'matches') or not response.matches:
+                print(f"No vectors found in intelligence-main for {variable_name}")
+                return None
+            
+            if not all_vector_options:
+                print(f"No valid vectors with metadata found for {variable_name}")
+                return None
+            
+            # Check for direct pattern matches first
+            if variable_upper in variable_patterns:
+                target_pattern = variable_patterns[variable_upper]
+                for vector in all_vector_options:
+                    excel_name = vector.get('name', '')
+                    if target_pattern.lower() in excel_name.lower():
+                        print(f"Direct match found for {variable_name}: {excel_name}")
+                        self.vector_cache[variable_name] = vector
+                        return vector
+            
+            # Use LLM to find the best match
+            prompt = f"""Given this list of available financial data vectors, find the best match for "{variable_name}":
+
+Available vectors:
+{json.dumps(all_vector_options[:10], indent=2)}
+
+Find the vector that best matches "{variable_name}". Look for:
+- WTI/Oil: crude oil, petroleum, energy commodities
+- TIPS/Treasury: treasury bonds, government bonds, interest rates, yields
+- CPI: consumer price index, inflation, price levels
+- DXY: dollar index, currency, USD strength
+- Gold: precious metals, commodities
+- VIX: volatility index, market fear
+- Bitcoin/BTC: cryptocurrency, digital assets
+
+Respond with JSON:
+{{
+  "best_match_id": "vector_id_here",
+  "confidence": 0.8,
+  "reasoning": "explanation"
+}}"""
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are an expert at matching financial variables to data sources. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=300
             )
             
-            for match in response.matches:
-                if hasattr(match, 'metadata') and match.metadata:
-                    metadata = match.metadata
-                    score = 0
-                    
-                    # Check excel_name
-                    excel_name = str(metadata.get('excel_name', '')).upper()
-                    if excel_name == variable_upper:
-                        score += 10
-                    elif any(pattern.upper() in excel_name for pattern in search_patterns):
-                        score += 5
-                    
-                    # Check if has time series data
-                    if any(key in metadata for key in ['time_series', 'data', 'values']):
-                        score += 3
-                    
-                    if score > best_score:
-                        best_score = score
-                        best_match = {
-                            'id': match.id,
-                            'metadata': metadata,
-                            'confidence': min(score / 10.0, 1.0)
-                        }
-        
-        except Exception as e:
-            print(f"Search failed for {variable_name}: {e}")
+            result = json.loads(response.choices[0].message.content)
+            best_match_id = result.get('best_match_id')
+            confidence = result.get('confidence', 0)
+            
+            print(f"LLM Variable Matching for {variable_name}:")
+            print(f"  Best match: {best_match_id}")
+            print(f"  Confidence: {confidence}")
+            print(f"  Reasoning: {result.get('reasoning', 'N/A')}")
+            
+            if confidence >= 0.6:  # Only use if confident
+                # Find the full vector data
+                matched_vector = next((v for v in all_vector_options if v['id'] == best_match_id), None)
+                if matched_vector:
+                    self.vector_cache[variable_name] = matched_vector
+                    return matched_vector
+            
+            print(f"No confident match found for {variable_name}")
             return None
-        
-        if best_match and best_score > 3:
-            self.vector_cache[variable_upper] = best_match
-            print(f"Found match for {variable_name}: {best_match['id']}")
-            return best_match
-        
-        print(f"No suitable match found for {variable_name}")
-        return None
-    
-
-
-    def find_vector_for_variable(self, variable_name):
-        """
-        Enhanced LLM-powered variable discovery - now uses the comprehensive search system
-        """
-        # Use the enhanced method for all variables
-        return self.find_vector_for_variable_enhanced(variable_name)
+            
+        except Exception as e:
+            print(f"Error finding vector for {variable_name}: {e}")
+            return None
     
     def fetch_data_from_pinecone(self, vector_info):
         """
         Extract time series data from a Pinecone vector
         """
         try:
-            intelligence_index = self.pinecone_client.client.Index(self.intelligence_index_name)
+            intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
             
             # Fetch the specific vector
             vector_response = intelligence_index.fetch([vector_info['id']])
@@ -214,133 +247,6 @@ class MultiFactorDataFetcher:
             print(f"Error fetching data from Pinecone for {vector_info['id']}: {e}")
             return None
     
-    def fetch_wti_data_direct(self):
-        """
-        Direct extraction of WTI/crude oil data using multiple search strategies
-        """
-        try:
-            intelligence_index = self.pinecone_client.client.Index("intelligence-main")
-            
-            # Multiple search strategies for WTI/crude oil data
-            search_strategies = [
-                # Strategy 1: Direct metadata search for oil-related terms
-                {"filter": {"excel_name": {"$in": ["WTI", "CRUDE", "OIL", "BRENT"]}}},
-                {"filter": {"name": {"$regex": ".*oil.*"}}},
-                {"filter": {"symbol": {"$in": ["WTI", "CRUDE", "CLF", "CL"]}}},
-                {"filter": {"description": {"$regex": ".*crude.*"}}},
-                {"filter": {"title": {"$regex": ".*petroleum.*"}}},
-            ]
-            
-            all_matches = []
-            
-            # Try each search strategy
-            for strategy in search_strategies:
-                try:
-                    response = intelligence_index.query(
-                        vector=[0.0] * 1536,  # Dummy vector for metadata search
-                        top_k=100,
-                        include_metadata=True,
-                        **strategy
-                    )
-                    
-                    if hasattr(response, 'matches') and response.matches:
-                        for match in response.matches:
-                            if hasattr(match, 'metadata') and match.metadata:
-                                metadata = match.metadata
-                                # Look for oil/crude related keywords
-                                text_fields = [
-                                    metadata.get('excel_name', ''),
-                                    metadata.get('name', ''),
-                                    metadata.get('symbol', ''),
-                                    metadata.get('description', ''),
-                                    metadata.get('title', ''),
-                                    metadata.get('raw_text', '')
-                                ]
-                                
-                                combined_text = ' '.join(str(field).lower() for field in text_fields)
-                                
-                                # Check for oil-related keywords
-                                oil_keywords = ['wti', 'crude', 'oil', 'petroleum', 'brent', 'energy']
-                                if any(keyword in combined_text for keyword in oil_keywords):
-                                    all_matches.append({
-                                        'id': match.id,
-                                        'metadata': metadata,
-                                        'score': match.score if hasattr(match, 'score') else 0,
-                                        'text': combined_text
-                                    })
-                except Exception as e:
-                    print(f"Search strategy failed: {e}")
-                    continue
-            
-            if not all_matches:
-                print("No WTI/crude oil data found in intelligence-main index")
-                return None
-            
-            # Sort by relevance and try to extract data
-            all_matches.sort(key=lambda x: x['score'], reverse=True)
-            
-            for match in all_matches[:5]:  # Try top 5 matches
-                try:
-                    # Try to extract time series data
-                    metadata = match['metadata']
-                    
-                    # Look for time series data in various formats
-                    time_series_sources = [
-                        metadata.get('time_series'),
-                        metadata.get('data'),
-                        metadata.get('values'),
-                        metadata.get('price_data'),
-                        metadata.get('historical_data')
-                    ]
-                    
-                    for ts_data in time_series_sources:
-                        if ts_data:
-                            # Try to parse the time series data
-                            if isinstance(ts_data, dict):
-                                df = pd.DataFrame.from_dict(ts_data, orient='index')
-                            elif isinstance(ts_data, list):
-                                df = pd.DataFrame(ts_data)
-                            else:
-                                continue
-                            
-                            # Convert index to datetime if needed
-                            if not isinstance(df.index, pd.DatetimeIndex):
-                                try:
-                                    df.index = pd.to_datetime(df.index)
-                                except:
-                                    if 'date' in df.columns:
-                                        df['date'] = pd.to_datetime(df['date'])
-                                        df = df.set_index('date')
-                                    else:
-                                        continue
-                            
-                            # Find value column
-                            value_col = None
-                            for col in ['close', 'value', 'price', 'rate', 'level', 'wti', 'crude']:
-                                if col.lower() in [c.lower() for c in df.columns]:
-                                    value_col = next(c for c in df.columns if c.lower() == col.lower())
-                                    break
-                            
-                            if value_col is None and len(df.columns) == 1:
-                                value_col = df.columns[0]
-                            
-                            if value_col and len(df) > 10:  # Ensure we have sufficient data
-                                series = df[value_col].dropna()
-                                if len(series) > 10:
-                                    print(f"Successfully extracted WTI data: {len(series)} points from {match['id']}")
-                                    return series
-                                    
-                except Exception as e:
-                    print(f"Failed to extract data from {match['id']}: {e}")
-                    continue
-            
-            print("Could not extract valid WTI time series data from any matches")
-            return None
-            
-        except Exception as e:
-            print(f"Error in WTI data extraction: {e}")
-            return None
-
     def fetch_gold_data_direct(self):
         """
         Direct extraction of gold data using confirmed working patterns
@@ -439,32 +345,6 @@ class MultiFactorDataFetcher:
                         print(f"No Bitcoin data found")
                 except Exception as e:
                     print(f"Error fetching Bitcoin data: {e}")
-                continue
-            
-            # Special handling for WTI/Oil variables
-            if var.upper() in ['WTI', 'CRUDE', 'OIL', 'CL']:
-                print(f"Fetching {var} using direct WTI extraction...")
-                try:
-                    wti_data = self.fetch_wti_data_direct()
-                    if wti_data is not None and len(wti_data) > 0:
-                        # Filter by date range
-                        start_dt = pd.to_datetime(start_date)
-                        end_dt = pd.to_datetime(end_date)
-                        
-                        filtered_data = wti_data[
-                            (wti_data.index >= start_dt) & 
-                            (wti_data.index <= end_dt)
-                        ]
-                        
-                        if len(filtered_data) > 0:
-                            data_frames[var] = filtered_data
-                            print(f"Successfully fetched {var}: {len(filtered_data)} days")
-                        else:
-                            print(f"No WTI data in date range for {var}")
-                    else:
-                        print(f"Could not extract WTI data for {var}")
-                except Exception as e:
-                    print(f"Error fetching WTI data for {var}: {e}")
                 continue
             
             # Special handling for GOLD variables

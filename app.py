@@ -56,121 +56,59 @@ def check_openai_connection():
     except Exception as e:
         return False, f"Connection failed: {str(e)}"
 
-# Load strategies with efficient file-based caching
-@st.cache_data(ttl=3600)  # Cache in memory for 1 hour
-def load_strategies_cached():
-    """Load strategies from file cache or Pinecone if cache is stale"""
-    import json
-    import os
-    from datetime import datetime
-    
-    cache_file = "strategies_cache.json"
-    cache_max_age = 86400  # 24 hours in seconds
-    
-    # Check if cache file exists and is recent
-    if os.path.exists(cache_file):
-        try:
-            file_age = datetime.now().timestamp() - os.path.getmtime(cache_file)
-            if file_age < cache_max_age:
-                with open(cache_file, 'r') as f:
-                    strategies = json.load(f)
-                    print(f"Loaded {len(strategies)} strategies from cache (age: {file_age/3600:.1f}h)")
-                    return strategies
-        except Exception as e:
-            print(f"Cache read error: {e}")
-    
-    # Cache miss or stale - load fresh from Pinecone
-    return load_strategies_from_pinecone()
-
-def load_strategies_from_pinecone():
-    """Load fresh strategies from Pinecone and update cache"""
-    import json
-    from regime_correlations import is_daily_only_strategy
-    
-    pinecone_client, status = init_pinecone()
-    if not pinecone_client:
-        print(f"Pinecone unavailable: {status}")
+# Load strategies from Pinecone (simple and fast)
+@st.cache_data(ttl=1800)  # Cache for 30 minutes
+def load_strategies_fast(_pinecone_client):
+    """Load all strategies from Pinecone and filter for daily-frequency only"""
+    if not _pinecone_client:
         return []
     
     try:
+        from regime_correlations import is_daily_only_strategy
+        
+        # Fetch ALL strategies from the index using scan/fetch
         all_strategies = []
         
-        # Get all vector IDs
-        if hasattr(pinecone_client.index, 'list'):
-            scan_results = pinecone_client.index.list()
-            all_ids = []
+        # Get all vector IDs first by scanning the entire index
+        scan_results = _pinecone_client.index.list()
+        all_ids = []
+        
+        # Collect all vector IDs
+        for ids_batch in scan_results:
+            all_ids.extend(ids_batch)
+        
+        print(f"Found {len(all_ids)} total vectors in index")
+        
+        # Fetch all strategies in batches of 100
+        batch_size = 100
+        for i in range(0, len(all_ids), batch_size):
+            batch_ids = all_ids[i:i + batch_size]
             
-            for ids_batch in scan_results:
-                all_ids.extend(ids_batch)
-            
-            print(f"Found {len(all_ids)} total vectors in index")
-            
-            # Fetch in batches
-            batch_size = 100
-            for i in range(0, len(all_ids), batch_size):
-                batch_ids = all_ids[i:i + batch_size]
+            try:
+                fetch_response = _pinecone_client.index.fetch(ids=batch_ids)
                 
-                try:
-                    if hasattr(pinecone_client.index, 'fetch'):
-                        fetch_response = pinecone_client.index.fetch(ids=batch_ids)
+                for vector_id, vector_data in fetch_response.vectors.items():
+                    if hasattr(vector_data, 'metadata') and vector_data.metadata:
+                        strategy = {
+                            'id': vector_id,
+                            'name': vector_data.metadata.get('name', 'Unknown Strategy'),
+                            'description': vector_data.metadata.get('description', 'No description available'),
+                            'excel_names': vector_data.metadata.get('excel_names', [])
+                        }
                         
-                        for vector_id, vector_data in fetch_response.vectors.items():
-                            if hasattr(vector_data, 'metadata') and vector_data.metadata:
-                                metadata = vector_data.metadata
-                                
-                                # Debug logging for metadata extraction
-                                print(f"[METADATA DEBUG] Strategy {vector_id[:8]}:")
-                                print(f"  Available fields: {list(metadata.keys())}")
-                                if 'total_return' in metadata:
-                                    print(f"  total_return: {metadata.get('total_return')}")
-                                if 'sharpe_ratio' in metadata:
-                                    print(f"  sharpe_ratio: {metadata.get('sharpe_ratio')}")
-                                
-                                strategy = {
-                                    'id': vector_id,
-                                    'name': metadata.get('name', 'Unknown Strategy'),
-                                    'description': metadata.get('description', 'No description'),
-                                    'excel_names': metadata.get('excel_names', []),
-                                    'metadata': {
-                                        'strategy_type': metadata.get('strategy_type', 'Unknown'),
-                                        'total_return': float(metadata.get('total_return', 0)),
-                                        'sharpe_ratio': float(metadata.get('sharpe_ratio', 0)),
-                                        'max_drawdown': float(metadata.get('max_drawdown', 0)),
-                                        'success_rate': float(metadata.get('success_rate', 0)),
-                                        'avg_holding_days': metadata.get('avg_holding_days', 'N/A'),
-                                        'total_trades': metadata.get('total_trades', 'N/A'),
-                                        'quality_score': metadata.get('quality_score', 'N/A'),
-                                        'dependencies': metadata.get('dependencies', []),
-                                        # Extract all other metadata fields
-                                        **{k: v for k, v in metadata.items() if k not in [
-                                            'name', 'description', 'excel_names', 'strategy_type',
-                                            'total_return', 'sharpe_ratio', 'max_drawdown', 'success_rate',
-                                            'avg_holding_days', 'total_trades', 'quality_score', 'dependencies'
-                                        ]}
-                                    }
-                                }
-                                
-                                # Include all strategies regardless of frequency
-                                all_strategies.append(strategy)
-                                
-                except Exception as e:
-                    print(f"Error fetching batch {i//batch_size + 1}: {e}")
-                    continue
+                        # Only include strategies with daily-frequency variables
+                        if is_daily_only_strategy(strategy):
+                            all_strategies.append(strategy)
+                            
+            except Exception as e:
+                print(f"Error fetching batch {i//batch_size + 1}: {e}")
+                continue
         
-        print(f"Loaded {len(all_strategies)} strategies from Pinecone")
-        
-        # Save to cache file
-        try:
-            with open("strategies_cache.json", 'w') as f:
-                json.dump(all_strategies, f, indent=2)
-            print("Strategies cached to file")
-        except Exception as e:
-            print(f"Cache save error: {e}")
-        
+        print(f"Final total: {len(all_strategies)} daily-frequency strategies loaded")
         return all_strategies
-        
+    
     except Exception as e:
-        print(f"Pinecone loading error: {e}")
+        print(f"Error loading strategies: {e}")
         return []
 
 # Initialize session state
@@ -283,16 +221,19 @@ else:
 # Strategy selection
 st.sidebar.header("Strategy Selection")
 
-# Load strategies with caching
+# Load strategies quickly from Pinecone
 strategies = []
-try:
-    strategies = load_strategies_cached()
-    if strategies:
-        st.sidebar.success(f"Loaded {len(strategies)} strategies")
-    else:
-        st.sidebar.warning("No strategies found in database")
-except Exception as e:
-    st.sidebar.error(f"Error loading strategies: {str(e)}")
+if pinecone_client:
+    try:
+        strategies = load_strategies_fast(pinecone_client)
+        if strategies:
+            st.sidebar.success(f"Loaded {len(strategies)} strategies")
+        else:
+            st.sidebar.warning("No strategies found in database")
+    except Exception as e:
+        st.sidebar.error(f"Error loading strategies: {str(e)}")
+else:
+    st.sidebar.warning("Pinecone connection required to load strategies")
 
 # Strategy search and filtering
 st.sidebar.subheader("Strategy Selection")
@@ -317,31 +258,33 @@ search_term = st.sidebar.text_input(
 filtered_strategies = strategies if strategies else []
 
 if data_filter.startswith("BTC-only") and strategies:
-    # Filter for BTC-only strategies (excel_names contains only BTC variables)
+    # Filter to only BTC-only strategies
     btc_strategies = []
+    router = SimulationRouter()
+    
     for strategy in strategies:
-        excel_names = strategy.get('excel_names', [])
-        
-        # Only classify as BTC-only if ALL variables contain "BTC" or "Bitcoin"
-        is_btc_only = all('btc' in name.lower() or 'bitcoin' in name.lower() for name in excel_names)
-        
-        if is_btc_only:
-            btc_strategies.append(strategy)
+        try:
+            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
+            if simulation_mode == 'btc_only':
+                btc_strategies.append(strategy)
+        except:
+            continue
     
     filtered_strategies = btc_strategies
     st.sidebar.info(f"📊 {len(filtered_strategies)} BTC-only strategies")
 
 elif data_filter.startswith("Multi-factor") and strategies:
-    # Filter for multi-factor strategies (excel_names contains any non-BTC variables)
+    # Filter to multi-factor strategies
     multi_strategies = []
+    router = SimulationRouter()
+    
     for strategy in strategies:
-        excel_names = strategy.get('excel_names', [])
-        
-        # Classify as multi-factor if ANY variable is not BTC/Bitcoin
-        has_non_btc = any('btc' not in name.lower() and 'bitcoin' not in name.lower() for name in excel_names)
-        
-        if has_non_btc:
-            multi_strategies.append(strategy)
+        try:
+            simulation_mode = router.select_simulation_mode(strategy.get('metadata', {}))
+            if simulation_mode == 'multi_factor':
+                multi_strategies.append(strategy)
+        except:
+            continue
     
     filtered_strategies = multi_strategies
     st.sidebar.info(f"📈 {len(filtered_strategies)} multi-factor strategies")
@@ -658,56 +601,6 @@ if st.session_state.bitcoin_data is not None:
                                     status_placeholder.info(f"🔄 Generating price paths: {sim_number}/{n_simulations}")
                                 else:
                                     status_placeholder.info(f"📈 Executing strategy logic: {sim_number}/{n_simulations}")
-                            
-                            # Data validation before simulation
-                            if simulation_mode == 'multi_factor' and required_variables:
-                                status_placeholder.info("🔍 Validating required data availability...")
-                                missing_data = []
-                                
-                                # Test data availability for each required variable
-                                from utils.multi_factor_data import MultiFactorDataFetcher
-                                data_fetcher = MultiFactorDataFetcher(pinecone_client)
-                                
-                                for var in required_variables:
-                                    if var != 'BTC':  # BTC data already validated
-                                        try:
-                                            # Quick test fetch to validate data availability
-                                            if var.upper() in ['WTI', 'CRUDE', 'OIL', 'CL']:
-                                                test_data = data_fetcher.fetch_wti_data_direct()
-                                                if test_data is None or len(test_data) < 10:
-                                                    missing_data.append(f'{var} (Oil prices)')
-                                            elif var.upper() in ['GOLD', 'GLD', 'XAU']:
-                                                test_data = data_fetcher.fetch_gold_data_direct()
-                                                if test_data is None or len(test_data) < 10:
-                                                    missing_data.append(f'{var} (Gold prices)')
-                                            else:
-                                                # For other variables, use the enhanced LLM-based search
-                                                vector_info = data_fetcher.find_vector_for_variable(var)
-                                                if not vector_info or vector_info.get('confidence', 0) < 0.3:
-                                                    missing_data.append(f'{var} (Economic data)')
-                                                else:
-                                                    # Test actual data extraction
-                                                    test_data = data_fetcher.fetch_data_from_pinecone(vector_info)
-                                                    if test_data is None or len(test_data) < 10:
-                                                        missing_data.append(f'{var} (Data extraction failed)')
-                                        except Exception as e:
-                                            print(f"Data validation failed for {var}: {e}")
-                                            missing_data.append(f'{var} (Data access error)')
-                                
-                                if missing_data:
-                                    overall_progress.progress(100, text="Data validation failed")
-                                    status_placeholder.empty()
-                                    
-                                    st.error("❌ **Required Data Not Available**")
-                                    st.error(f"Cannot run simulation - missing data for: {', '.join(missing_data)}")
-                                    st.warning("**Solutions:**")
-                                    st.warning("• Select a BTC-only strategy instead")
-                                    st.warning("• Choose a different multi-factor strategy")
-                                    st.warning("• Contact support if data should be available")
-                                    
-                                    # Clear progress indicators
-                                    progress_container.empty()
-                                    st.stop()
                             
                             results = simulator.run_simulation(
                                 n_simulations=n_simulations,
