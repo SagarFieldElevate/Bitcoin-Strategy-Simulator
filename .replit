@@ -2,7 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["glibcLocales", "python311Packages.streamlit", "python311Packages.pandas", "python311Packages.numpy", "python311Packages.plotly", "python311Packages.yfinance", "python311Packages.openai", "python311Packages.psycopg2", "python311Packages.sqlalchemy", "python311Packages.scipy", "python311Packages.requests"]
+packages = ["glibcLocales", "python311Packages.numpy", "python311Packages.openai", "python311Packages.pandas", "python311Packages.plotly", "python311Packages.psycopg2", "python311Packages.requests", "python311Packages.scipy", "python311Packages.sqlalchemy", "python311Packages.streamlit", "python311Packages.yfinance"]
 
 [deployment]
 deploymentTarget = "autoscale"
