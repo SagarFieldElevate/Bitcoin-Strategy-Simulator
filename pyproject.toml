@@ -5,7 +5,7 @@ description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
     "arch>=7.2.0",
-    "numpy>=2.3.0",
+    "numpy==1.26.4",
     "openai>=1.88.0",
     "pandas>=2.3.0",
     "pinecone>=7.1.0",
