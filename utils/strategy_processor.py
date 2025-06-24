@@ -4,16 +4,70 @@ Strategy processing utilities using OpenAI to generate structured conditions
 import json
 import os
 from openai import OpenAI
+import streamlit as st
+from functools import lru_cache
+import hashlib
 
 class StrategyProcessor:
     def __init__(self):
         """Initialize OpenAI client"""
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # In-memory cache for strategy conditions
+        self._conditions_cache = {}
+    
+    def _get_strategy_hash(self, strategy_metadata):
+        """Generate a hash for strategy metadata to use as cache key"""
+        # Create a deterministic hash from strategy metadata
+        key_parts = [
+            strategy_metadata.get('description', ''),
+            str(strategy_metadata.get('excel_names', [])),
+            str(strategy_metadata.get('avg_holding_days', 3)),
+            strategy_metadata.get('strategy_type', 'unknown')
+        ]
+        key_string = '|'.join(key_parts)
+        return hashlib.md5(key_string.encode()).hexdigest()
+    
+    @st.cache_data(ttl=3600*24, show_spinner=False)  # Cache for 24 hours
+    def _generate_conditions_cached(self, strategy_hash, description, excel_names, avg_holding_days, strategy_type):
+        """Cached version of condition generation - uses Streamlit caching"""
+        # This is a static method to work with Streamlit's caching
+        return self._generate_conditions_internal({
+            'description': description,
+            'excel_names': excel_names,
+            'avg_holding_days': avg_holding_days,
+            'strategy_type': strategy_type
+        })
     
     def generate_conditions(self, strategy_metadata):
         """
-        Generate structured conditions from strategy metadata using OpenAI
+        Generate structured conditions from strategy metadata using OpenAI with caching
         """
+        # Check in-memory cache first
+        strategy_hash = self._get_strategy_hash(strategy_metadata)
+        if strategy_hash in self._conditions_cache:
+            print(f"Using cached conditions for strategy")
+            return self._conditions_cache[strategy_hash]
+        
+        # Try Streamlit cache
+        try:
+            conditions = self._generate_conditions_cached(
+                strategy_hash,
+                strategy_metadata.get('description', ''),
+                tuple(strategy_metadata.get('excel_names', [])),  # Convert to tuple for hashability
+                strategy_metadata.get('avg_holding_days', 3),
+                strategy_metadata.get('strategy_type', 'unknown')
+            )
+            self._conditions_cache[strategy_hash] = conditions
+            return conditions
+        except Exception as e:
+            # If caching fails, generate directly
+            print(f"Cache failed, generating conditions directly: {e}")
+            conditions = self._generate_conditions_internal(strategy_metadata)
+            self._conditions_cache[strategy_hash] = conditions
+            return conditions
+    
+    def _generate_conditions_internal(self, strategy_metadata):
+        """Internal method that actually generates conditions using OpenAI"""
         prompt = f"""You are a trading strategy compiler. Given the metadata of a Bitcoin strategy, extract the entry and exit conditions, asset dependencies, and turn it into a structured JSON schema called `conditions`.
 
 Example format:
@@ -161,7 +215,8 @@ Generate the `conditions` JSON:"""
                 # Parse existing conditions
                 try:
                     conditions = json.loads(conditions_str)
-                except:
+                except json.JSONDecodeError as e:
+                    print(f"Failed to parse existing conditions: {e}")
                     conditions = self.generate_conditions(metadata)
             
             # Create processed strategy object
@@ -200,6 +255,17 @@ Generate the `conditions` JSON:"""
             exit_days = conditions.get('exit', {}).get('days', 3)
             position_side = conditions.get('position', {}).get('side', 'long')
             
+            # Ensure numeric parameters are integers
+            try:
+                delay_days = int(delay_days)
+            except (ValueError, TypeError):
+                delay_days = 0
+            
+            try:
+                exit_days = int(exit_days)
+            except (ValueError, TypeError):
+                exit_days = 3
+            
             # Simple signal generation based on rule patterns
             signals = pd.Series(False, index=df.index)
             
@@ -219,7 +285,7 @@ Generate the `conditions` JSON:"""
             
             # Apply delay if specified
             if delay_days > 0:
-                signals = signals.shift(delay_days).fillna(False).infer_objects(copy=False)
+                signals = signals.shift(delay_days).fillna(False)
             
             # Execute strategy with holding period
             pos, days, returns = 0, 0, []

@@ -151,7 +151,8 @@ class DataIntegrityValidator:
             from .bitcoin_data import fetch_bitcoin_data
             btc_data = fetch_bitcoin_data()
             return len(btc_data)
-        except:
+        except Exception as e:
+            print(f"Failed to fetch BTC data for validation: {e}")
             return 0
     
     def _load_all_strategies(self) -> List[Dict]:

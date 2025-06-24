@@ -5,11 +5,16 @@ based on strategy type and dependencies
 import json
 import os
 from openai import OpenAI
+import streamlit as st
+import hashlib
+import numpy as np
 
 class SimulationRouter:
     def __init__(self):
         """Initialize the simulation router with OpenAI client"""
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # Cache for dependency detection results
+        self._dependency_cache = {}
     
     def select_simulation_mode(self, strategy_metadata):
         """
@@ -33,10 +38,22 @@ class SimulationRouter:
             # Default fallback - analyze description
             return self._detect_dependencies_with_llm(description)
     
+    @st.cache_data(ttl=3600*24, show_spinner=False)  # Cache for 24 hours
+    def _detect_dependencies_cached(self, description_hash):
+        """Cached version of dependency detection"""
+        # This method exists just for Streamlit caching
+        return None  # Actual detection happens in _detect_dependencies_with_llm
+    
     def _detect_dependencies_with_llm(self, description):
         """
-        Use LLM to detect if strategy depends on external macro variables
+        Use LLM to detect if strategy depends on external variables beyond Bitcoin price
         """
+        # Check cache first
+        description_hash = hashlib.md5(description.encode()).hexdigest()
+        if description_hash in self._dependency_cache:
+            print(f"Using cached dependency detection result")
+            return self._dependency_cache[description_hash]
+        
         prompt = f"""Analyze this trading strategy description and determine if it depends on external variables beyond Bitcoin price.
 
 Strategy description: "{description}"
@@ -81,7 +98,11 @@ If the strategy only mentions Bitcoin price, technical indicators, or chart patt
             print(f"  Variables: {result.get('detected_variables', [])}")
             print(f"  Reasoning: {result.get('reasoning', 'N/A')}")
             
-            return 'multi_factor' if has_dependencies else 'btc_only'
+            # Cache the result
+            result_mode = 'multi_factor' if has_dependencies else 'btc_only'
+            self._dependency_cache[description_hash] = result_mode
+            
+            return result_mode
             
         except Exception as e:
             print(f"Error in LLM dependency detection: {e}")
@@ -128,3 +149,4 @@ If the strategy only mentions Bitcoin price, technical indicators, or chart patt
         unique_vars = ['BTC'] + [var for var in required_vars[1:] if var != 'BTC']
         
         return unique_vars
+

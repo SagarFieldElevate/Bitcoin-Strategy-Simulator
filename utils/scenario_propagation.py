@@ -96,19 +96,31 @@ class ScenarioPropagator:
         Deterministic scenario assignment based on asset class relationships.
         """
         # Define asset class relationships
-        risk_assets = ["BTC", "SPY"]
-        safe_havens = ["GOLD", "TIPS"]
+        risk_assets = ["BTC", "SPY", "QQQ", "IWM", "ETH_VOLUME", "DEX_VOLUME"]
+        safe_havens = ["GOLD", "TREASURY_10Y", "TIPS_10Y", "TIPS_5Y", "TIPS_20Y", "TIPS_30Y"]
+        commodities = ["WTI", "GOLD"]
         
         primary_is_risk = primary_asset in risk_assets
         target_is_risk = target_asset in risk_assets
         
+        primary_is_safe = primary_asset in safe_havens
+        target_is_safe = target_asset in safe_havens
+        
         # Same asset class - similar behavior
-        if primary_is_risk == target_is_risk:
+        if (primary_is_risk and target_is_risk) or (primary_is_safe and target_is_safe):
             return primary_scenario
         
         # Different asset classes - opposite behavior in extreme scenarios
         if primary_scenario in [MarketCondition.HIGH_VOL_DOWN, MarketCondition.HIGH_VOL_UP]:
-            return self._get_opposite_scenario(primary_scenario)
+            if (primary_is_risk and target_is_safe) or (primary_is_safe and target_is_risk):
+                return self._get_opposite_scenario(primary_scenario)
+        
+        # Special case for commodities
+        if target_asset in commodities:
+            if primary_scenario in [MarketCondition.HIGH_VOL_DOWN, MarketCondition.STABLE_VOL_DOWN]:
+                return MarketCondition.HIGH_VOL_DOWN if "HIGH_VOL" in primary_scenario.name else MarketCondition.STABLE_VOL_DOWN
+            elif primary_scenario in [MarketCondition.HIGH_VOL_UP, MarketCondition.STABLE_VOL_UP]:
+                return MarketCondition.HIGH_VOL_UP if "HIGH_VOL" in primary_scenario.name else MarketCondition.STABLE_VOL_UP
         
         # For stable scenarios, use moderate version
         return self._get_neutral_scenario(primary_scenario)
@@ -163,11 +175,11 @@ class ScenarioPropagator:
             correlation = get_regime_correlation(regime_name, primary_asset, target_asset)
             
             if correlation > 0.5:
-                return f"{target_asset} has strong positive correlation ({correlation:.1f}) with {primary_asset} in {regime_name} regime"
+                return f"{target_asset} has strong positive correlation ({correlation:.2f}) with {primary_asset} in {regime_name} regime"
             elif correlation < -0.3:
-                return f"{target_asset} has negative correlation ({correlation:.1f}) with {primary_asset}, assigned opposite scenario"
+                return f"{target_asset} has negative correlation ({correlation:.2f}) with {primary_asset}, assigned opposite scenario"
             else:
-                return f"{target_asset} has weak correlation ({correlation:.1f}) with {primary_asset}, assigned neutral scenario"
+                return f"{target_asset} has weak correlation ({correlation:.2f}) with {primary_asset}, assigned neutral scenario"
                 
         except (ValueError, KeyError):
             return f"{target_asset} correlation data unavailable, using same scenario as {primary_asset}"
@@ -210,6 +222,19 @@ def test_scenario_propagation():
     print("Deterministic Assignments:")
     for asset, scenario in scenarios_det.items():
         print(f"  {asset}: {scenario.value}")
+    
+    # Generate scenario matrix
+    print("\n" + "=" * 40)
+    print("SCENARIO PROPAGATION MATRIX")
+    print("=" * 40)
+    
+    matrix = propagator.generate_scenario_matrix("BTC", ["BTC", "SPY", "GOLD", "TREASURY_10Y"])
+    
+    for primary_scenario_name, assignments in matrix.items():
+        print(f"\nPrimary Scenario: {primary_scenario_name}")
+        for asset, scenario in assignments.items():
+            if asset != "BTC":  # Skip primary asset
+                print(f"  {asset}: {scenario.value}")
 
 if __name__ == "__main__":
     test_scenario_propagation()

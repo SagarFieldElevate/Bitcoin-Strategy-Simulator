@@ -7,382 +7,365 @@ import numpy as np
 import json
 import os
 from datetime import datetime, timedelta
-from openai import OpenAI
+import streamlit as st
 
 class MultiFactorDataFetcher:
     def __init__(self, pinecone_client=None):
         """Initialize the multi-factor data fetcher"""
         self.pinecone_client = pinecone_client
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.intelligence_index_name = "intelligence-main"
         
-        # Cache for found vectors to avoid repeated LLM calls
+        # Cache for found vectors to avoid repeated searches
         self.vector_cache = {}
+        
+        # Cache for historical data - this is the KEY optimization
+        self._historical_data_cache = {}
+        self._cache_expiry = {}
+        self._cache_duration = timedelta(hours=24)  # Cache for 24 hours
+    
+    @st.cache_data(ttl=3600*24, show_spinner=False)  # Cache for 24 hours
+    def get_cached_historical_data(self, variables_tuple, start_date, end_date):
+        """
+        Static method for Streamlit caching of historical data.
+        This is separate from instance cache to leverage Streamlit's caching.
+        """
+        # This will be called by fetch_multi_factor_data
+        return None  # Placeholder - actual fetching happens in fetch_multi_factor_data
     
     def find_vector_for_variable(self, variable_name):
         """
-        Use LLM to find the best matching vector in intelligence-main index for a given variable
+        Find all vectors for a specific variable using Pinecone metadata filtering
         """
         if variable_name in self.vector_cache:
+            print(f"🔄 Using cached results for {variable_name}")
             return self.vector_cache[variable_name]
         
         if not self.pinecone_client:
-            print(f"No Pinecone client available for {variable_name}")
+            print(f"❌ No Pinecone client available for {variable_name}")
             return None
         
         # Connect to intelligence-main index
         try:
             intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
         except Exception as e:
-            print(f"Could not connect to intelligence-main index: {e}")
+            print(f"❌ Could not connect to intelligence-main index: {e}")
             return None
         
-        # Search for vectors with semantic similarity to the variable name
+        print(f"🔍 Searching for '{variable_name}' using metadata filter...")
+        
+        # Map excel_names from bitcoin-strategies to exact names in intelligence-main
+        # This mapping covers ALL excel_names found in the bitcoin-strategies index
+        excel_name_to_intelligence_main = {
+            # Direct matches (excel_name same as intelligence-main name)
+            '10-Year TIPS Yield (%)': '10-Year TIPS Yield (%)',
+            '10-Year Treasury Yield (%)': '10-Year Treasury Yield (%)',
+            '20-Year TIPS Yield (%)': '20-Year TIPS Yield (%)',
+            '30-Year TIPS Yield (%)': '30-Year TIPS Yield (%)',
+            '5-Year TIPS Yield (%)': '5-Year TIPS Yield (%)',
+            'Baa Corporate Credit Spread (%)': 'Baa Corporate Credit Spread (%)',
+            'Baltic Dry Index': 'Baltic Dry Index',
+            'Bank Prime Loan Rate (%)': 'Bank Prime Loan Rate (%)',
+            'COIN50 Perpetual Index (365 Days)': 'COIN50 Perpetual Index (365 Days)',
+            'CoinGecko BTC Daily Volume': 'CoinGecko BTC Daily Volume',
+            'CoinGecko ETH Daily Volume': 'CoinGecko ETH Daily Volume',
+            'DXY Daily Close Price': 'DXY Daily Close Price',
+            'DefiLlama DEX Historical Volume': 'DefiLlama DEX Historical Volume',
+            'Fear & Greed Index': 'Fear & Greed Index',
+            'Gold Daily Close Price': 'Gold Daily Close Price',
+            'Growth ETF': 'Growth ETF',
+            'IWM Daily Close Price': 'IWM Daily Close Price',
+            'Japan ETF': 'Japan ETF',
+            'Momentum ETF': 'Momentum ETF',
+            'NASDAQ 100 Index': 'NASDAQ 100 Index',
+            'QQQ Daily Close Price': 'QQQ Daily Close Price',
+            'SPY Daily Close Price': 'SPY Daily Close Price',
+            'US Equity Market Capitalization (Billions USD)': 'US Equity Market Capitalization (Billions USD)',
+            'US Federal Funds Rate': 'US Federal Funds Rate',
+            'Ultra Short 20+ Year Treasury': 'Ultra Short 20+ Year Treasury',
+            'WTI Crude Oil Price (USD/Barrel)': 'WTI Crude Oil Price (USD/Barrel)',
+            
+            # Common variable codes for backward compatibility
+            'BTC': 'Bitcoin Daily Close Price',
+            'BITCOIN': 'Bitcoin Daily Close Price',
+            'ETH': 'CoinGecko ETH Daily Volume',
+            'ETHEREUM': 'CoinGecko ETH Daily Volume',
+            'GOLD': 'Gold Daily Close Price',
+            'XAU': 'Gold Daily Close Price',
+            'WTI': 'WTI Crude Oil Price (USD/Barrel)',
+            'OIL': 'WTI Crude Oil Price (USD/Barrel)',
+            'CRUDE': 'WTI Crude Oil Price (USD/Barrel)',
+            'SPY': 'SPY Daily Close Price',
+            'SP500': 'S&P 500 Index',
+            'SPX': 'S&P 500 Index',
+            'QQQ': 'QQQ Daily Close Price',
+            'NASDAQ': 'NASDAQ 100 Index',
+            'NDX': 'NASDAQ 100 Index',
+            'IWM': 'IWM Daily Close Price',
+            'RUSSELL': 'Russell 2000 Index',
+            'DXY': 'DXY Daily Close Price',
+            'DOLLAR': 'DXY Daily Close Price',
+            'VIX': 'CBOE Volatility Index (VIX)',
+            'VOLATILITY': 'CBOE Volatility Index (VIX)',
+            'TIPS': '10-Year TIPS Yield (%)',
+            'TIPS_10Y': '10-Year TIPS Yield (%)',
+            'TIPS_5Y': '5-Year TIPS Yield (%)',
+            'TIPS_20Y': '20-Year TIPS Yield (%)',
+            'TIPS_30Y': '30-Year TIPS Yield (%)',
+            'TREASURY_10Y': '10-Year Treasury Yield (%)',
+            'FED_FUNDS': 'US Federal Funds Rate',
+            'BANK_PRIME': 'Bank Prime Loan Rate (%)',
+            'CORPORATE_CREDIT': 'Baa Corporate Credit Spread (%)',
+            'FEAR_GREED': 'Fear & Greed Index',
+            'BTC_VOLUME': 'CoinGecko BTC Daily Volume',
+            'ETH_VOLUME': 'CoinGecko ETH Daily Volume'
+        }
+        
+        # Get the exact name to search for
+        exact_name = excel_name_to_intelligence_main.get(variable_name, variable_name)
+        
+        if exact_name != variable_name:
+            print(f"📝 Variable mapping: '{variable_name}' -> '{exact_name}'")
+        else:
+            print(f"📝 Using exact variable name: '{exact_name}'")
+        
         try:
-            # Direct pattern matching for known variables
-            variable_patterns = {
-                'GOLD': 'Gold Daily Close Price',
-                'GLD': 'Gold Daily Close Price', 
-                'XAU': 'Gold Daily Close Price',
-                'GOLD_PRICE': 'Gold Daily Close Price',
-                'WTI': 'Oil',
-                'OIL': 'Oil',
-                'CRUDE': 'Oil',
-                'SPY': 'S&P 500',
-                'SP500': 'S&P 500',
-                'VIX': 'VIX',
-                'TIPS': 'Treasury'
-            }
-            
-            variable_upper = variable_name.upper()
-            
-            # Generate embedding for the variable name using OpenAI
-            search_text = f"{variable_name} price data time series economic indicator"
-            
-            # For known variables like GOLD, use targeted search patterns
-            if variable_upper in variable_patterns:
-                target_name = variable_patterns[variable_upper]
-                # Use search patterns that are more likely to find specific data types
-                search_queries = [
-                    [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],  # Commodities pattern
-                    [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], # Metals pattern
-                    [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], # Precious metals
-                    [0.001 if i % 17 == 0 else 0.0 for i in range(1536)], # Alternative
-                    [0.0] * 1536,  # Fallback basic query
-                ]
-            else:
-                # Default search patterns for unknown variables
-                search_queries = [
-                    [0.0] * 1536,  # Basic query
-                    [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],  # Pattern 1
-                    [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],  # Pattern 2
-                    [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],  # Pattern 3
-                ]
-            
-            all_vector_options = []
-            
-            for query_vector in search_queries:
-                response = intelligence_index.query(
-                    vector=query_vector,
-                    top_k=50,  # Increase search depth
-                    include_metadata=True
-                )
-                
-                if hasattr(response, 'matches') and response.matches:
-                    for match in response.matches:
-                        if hasattr(match, 'metadata') and match.metadata:
-                            vector_id = match.id
-                            metadata = match.metadata
-                            name = metadata.get('excel_name', metadata.get('name', metadata.get('symbol', metadata.get('title', vector_id))))
-                            description = metadata.get('description', metadata.get('info', metadata.get('raw_text', '')))
-                            
-                            # Check if we already have this vector
-                            if not any(v['id'] == vector_id for v in all_vector_options):
-                                all_vector_options.append({
-                                    'id': vector_id,
-                                    'name': name,
-                                    'description': description,
-                                    'metadata': metadata
-                                })
-                
-                if len(all_vector_options) >= 100:  # Enough samples
-                    break
-            
-            if not hasattr(response, 'matches') or not response.matches:
-                print(f"No vectors found in intelligence-main for {variable_name}")
-                return None
-            
-            if not all_vector_options:
-                print(f"No valid vectors with metadata found for {variable_name}")
-                return None
-            
-            # Check for direct pattern matches first
-            if variable_upper in variable_patterns:
-                target_pattern = variable_patterns[variable_upper]
-                for vector in all_vector_options:
-                    excel_name = vector.get('name', '')
-                    if target_pattern.lower() in excel_name.lower():
-                        print(f"Direct match found for {variable_name}: {excel_name}")
-                        self.vector_cache[variable_name] = vector
-                        return vector
-            
-            # Use LLM to find the best match
-            prompt = f"""Given this list of available financial data vectors, find the best match for "{variable_name}":
-
-Available vectors:
-{json.dumps(all_vector_options[:10], indent=2)}
-
-Find the vector that best matches "{variable_name}". Look for:
-- WTI/Oil: crude oil, petroleum, energy commodities
-- TIPS/Treasury: treasury bonds, government bonds, interest rates, yields
-- CPI: consumer price index, inflation, price levels
-- DXY: dollar index, currency, USD strength
-- Gold: precious metals, commodities
-- VIX: volatility index, market fear
-- Bitcoin/BTC: cryptocurrency, digital assets
-
-Respond with JSON:
-{{
-  "best_match_id": "vector_id_here",
-  "confidence": 0.8,
-  "reasoning": "explanation"
-}}"""
-
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are an expert at matching financial variables to data sources. Always respond with valid JSON only."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                max_tokens=300
+            # Use metadata filter to find all vectors for this variable
+            print(f"🔎 Querying Pinecone with filter: excel_name = '{exact_name}'")
+            results = intelligence_index.query(
+                vector=[0.0] * 1536,  # Placeholder vector
+                filter={"excel_name": {"$eq": exact_name}},
+                top_k=10000,  # Get as many results as possible
+                include_metadata=True
             )
             
-            result = json.loads(response.choices[0].message.content)
-            best_match_id = result.get('best_match_id')
-            confidence = result.get('confidence', 0)
+            if not hasattr(results, 'matches') or not results.matches:
+                print(f"❌ No vectors found for '{variable_name}' with exact name '{exact_name}'")
+                return None
             
-            print(f"LLM Variable Matching for {variable_name}:")
-            print(f"  Best match: {best_match_id}")
-            print(f"  Confidence: {confidence}")
-            print(f"  Reasoning: {result.get('reasoning', 'N/A')}")
+            print(f"✅ Found {len(results.matches)} vectors for '{variable_name}'")
             
-            if confidence >= 0.6:  # Only use if confident
-                # Find the full vector data
-                matched_vector = next((v for v in all_vector_options if v['id'] == best_match_id), None)
-                if matched_vector:
-                    self.vector_cache[variable_name] = matched_vector
-                    return matched_vector
+            # Cache the results
+            cache_entry = {
+                'variable_name': variable_name,
+                'exact_name': exact_name,
+                'vectors': results.matches
+            }
+            self.vector_cache[variable_name] = cache_entry
             
-            print(f"No confident match found for {variable_name}")
-            return None
+            return cache_entry
             
         except Exception as e:
-            print(f"Error finding vector for {variable_name}: {e}")
+            print(f"❌ Error searching for '{variable_name}': {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def fetch_data_from_pinecone(self, vector_info):
         """
-        Extract time series data from a Pinecone vector
+        Extract time series data from multiple Pinecone vectors for a variable
         """
-        try:
-            intelligence_index = self.pinecone_client.pc.Index(self.intelligence_index_name)
+        if not vector_info or 'vectors' not in vector_info:
+            print(f"❌ Invalid vector_info provided")
+            return None
+        
+        vectors = vector_info['vectors']
+        if not vectors:
+            print(f"❌ No vectors in vector_info")
+            return None
+        
+        variable_name = vector_info.get('variable_name', 'Unknown')
+        print(f"📊 Extracting time series data from {len(vectors)} vectors for '{variable_name}'...")
+        
+        all_data_points = []
+        vectors_processed = 0
+        vectors_with_data = 0
+        
+        for vector in vectors:
+            vectors_processed += 1
+            if not hasattr(vector, 'metadata') or not vector.metadata:
+                continue
             
-            # Fetch the specific vector
-            vector_response = intelligence_index.fetch([vector_info['id']])
+            metadata = vector.metadata
+            found_data_in_vector = False
             
-            if not hasattr(vector_response, 'vectors') or not vector_response.vectors:
-                print(f"Could not fetch vector {vector_info['id']}")
-                return None
+            # Extract date and value from metadata
+            # Try multiple approaches based on how data might be stored
             
-            vector_data = vector_response.vectors[vector_info['id']]
-            metadata = vector_data.metadata if hasattr(vector_data, 'metadata') else {}
-            
-            # Extract time series data from metadata
-            time_series_data = metadata.get('time_series', metadata.get('data', metadata.get('values')))
-            
-            if not time_series_data:
-                print(f"No time series data found in vector {vector_info['id']}")
-                return None
-            
-            # Convert to pandas DataFrame
-            if isinstance(time_series_data, dict):
-                df = pd.DataFrame.from_dict(time_series_data, orient='index')
-            elif isinstance(time_series_data, list):
-                df = pd.DataFrame(time_series_data)
-            else:
-                print(f"Unrecognized time series format for {vector_info['id']}")
-                return None
-            
-            # Ensure proper date index
-            if not isinstance(df.index, pd.DatetimeIndex):
+            # Approach 1: Direct date and value fields
+            if 'date' in metadata and 'value' in metadata:
                 try:
-                    df.index = pd.to_datetime(df.index)
-                except:
-                    # If index conversion fails, use dates from first column if available
-                    if 'date' in df.columns:
-                        df['date'] = pd.to_datetime(df['date'])
-                        df = df.set_index('date')
-                    else:
-                        print(f"Could not parse dates for {vector_info['id']}")
-                        return None
+                    date = pd.to_datetime(metadata['date'])
+                    value = float(metadata['value'])
+                    all_data_points.append({'date': date, 'value': value})
+                    found_data_in_vector = True
+                    continue
+                except (ValueError, TypeError, pd.errors.ParserError):
+                    pass
             
-            # Get the main value column
-            value_col = None
-            for col in ['close', 'value', 'price', 'rate', 'level']:
-                if col in df.columns:
-                    value_col = col
+            # Approach 2: Parse from raw_text
+            if 'raw_text' in metadata:
+                raw_text = metadata['raw_text']
+                if '|' in raw_text:
+                    try:
+                        parts = raw_text.split('|')
+                        if len(parts) >= 2:
+                            # Extract date
+                            date_part = parts[0].strip()
+                            if 'Date:' in date_part:
+                                date_str = date_part.replace('Date:', '').strip()
+                            else:
+                                date_str = date_part
+                            
+                            date = pd.to_datetime(date_str)
+                            
+                            # Extract value
+                            value_part = parts[1].strip()
+                            import re
+                            numbers = re.findall(r'[-+]?\d*\.?\d+', value_part)
+                            if numbers:
+                                value = float(numbers[-1])
+                                all_data_points.append({'date': date, 'value': value})
+                                found_data_in_vector = True
+                                continue
+                    except Exception as e:
+                        pass
+            
+            # Approach 3: Check for time series data in metadata
+            for key in ['time_series', 'data', 'values']:
+                if key in metadata:
+                    ts_data = metadata[key]
+                    if isinstance(ts_data, dict):
+                        for date_str, value in ts_data.items():
+                            try:
+                                date = pd.to_datetime(date_str)
+                                value = float(value)
+                                all_data_points.append({'date': date, 'value': value})
+                                found_data_in_vector = True
+                            except (ValueError, TypeError, pd.errors.ParserError):
+                                pass
+                    elif isinstance(ts_data, list):
+                        # Assume it's a list of [date, value] pairs or dicts
+                        for item in ts_data:
+                            if isinstance(item, dict) and 'date' in item and 'value' in item:
+                                try:
+                                    date = pd.to_datetime(item['date'])
+                                    value = float(item['value'])
+                                    all_data_points.append({'date': date, 'value': value})
+                                    found_data_in_vector = True
+                                except (ValueError, TypeError, pd.errors.ParserError):
+                                    pass
                     break
             
-            if value_col is None and len(df.columns) == 1:
-                value_col = df.columns[0]
-            
-            if value_col is None:
-                print(f"Could not identify value column for {vector_info['id']}")
-                return None
-            
-            return df[value_col].dropna()
-            
-        except Exception as e:
-            print(f"Error fetching data from Pinecone for {vector_info['id']}: {e}")
+            if found_data_in_vector:
+                vectors_with_data += 1
+        
+        print(f"📈 Processed {vectors_processed} vectors, {vectors_with_data} contained extractable data")
+        
+        if not all_data_points:
+            print(f"❌ No data points extracted from any vectors for '{variable_name}'")
             return None
+        
+        print(f"📊 Extracted {len(all_data_points)} raw data points")
+        
+        # Convert to DataFrame and clean
+        df = pd.DataFrame(all_data_points)
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.sort_values('date').drop_duplicates('date').reset_index(drop=True)
+        
+        # Create pandas Series
+        series = pd.Series(df['value'].values, index=df['date'], name=variable_name)
+        
+        print(f"✅ Successfully created time series with {len(series)} unique data points")
+        print(f"📅 Date range: {series.index.min().strftime('%Y-%m-%d')} to {series.index.max().strftime('%Y-%m-%d')}")
+        
+        return series
     
-    def fetch_gold_data_direct(self):
-        """
-        Direct extraction of gold data using confirmed working patterns
-        """
-        try:
-            intelligence_index = self.pinecone_client.pc.Index('intelligence-main')
-            
-            # Comprehensive search patterns to find all gold vectors
-            search_patterns = [
-                [0.001 if i % 2 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 3 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 5 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 7 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 11 == 0 else 0.0 for i in range(1536)], 
-                [0.001 if i % 13 == 0 else 0.0 for i in range(1536)], 
-                [0.001 if i % 17 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 19 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 23 == 0 else 0.0 for i in range(1536)],
-                [0.001 if i % 29 == 0 else 0.0 for i in range(1536)],
-                [0.0] * 1536,  # Also try zero vector
-            ]
-            
-            all_gold_data = []
-            
-            for query_vector in search_patterns:
-                response = intelligence_index.query(
-                    vector=query_vector,
-                    top_k=300,  # Cast wide net
-                    include_metadata=True
-                )
-                
-                if hasattr(response, 'matches') and response.matches:
-                    for match in response.matches:
-                        if hasattr(match, 'metadata') and match.metadata:
-                            metadata = match.metadata
-                            excel_name = metadata.get('excel_name', '').lower()
-                            raw_text = metadata.get('raw_text', '')
-                            
-                            if ('gold' in excel_name or 'gold' in raw_text.lower()) and 'Gold Close Price' in raw_text:
-                                try:
-                                    # Parse: "Date: 2023-09-15 00:00:00 | Gold Close Price (USD): 1923.7"
-                                    if '|' in raw_text:
-                                        parts = raw_text.split('|')
-                                        date_part = parts[0].strip().replace('Date:', '').strip()
-                                        price_part = parts[1].strip()
-                                        
-                                        date = pd.to_datetime(date_part)
-                                        price_str = price_part.split(':')[-1].strip()
-                                        price = float(price_str)
-                                        
-                                        all_gold_data.append({'date': date, 'price': price})
-                                except Exception:
-                                    continue
-            
-            if all_gold_data:
-                # Convert to DataFrame and clean
-                df = pd.DataFrame(all_gold_data)
-                df = df.sort_values('date').drop_duplicates('date').reset_index(drop=True)
-                
-                # Create pandas Series with proper index
-                series = pd.Series(df['price'].values, index=df['date'], name='GOLD')
-                print(f"Successfully extracted gold data: {len(series)} points")
-                return series
-            else:
-                print("No gold data found in comprehensive search")
-                return None
-                
-        except Exception as e:
-            print(f"Error in direct gold extraction: {e}")
-            return None
+
 
     def fetch_multi_factor_data(self, variables, start_date=None, end_date=None):
         """
-        Fetch historical data for multiple variables from intelligence-main Pinecone index
+        Fetch historical data for multiple variables with intelligent caching
         """
         if start_date is None:
-            start_date = (datetime.now() - timedelta(days=3*365)).strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=10*365)).strftime('%Y-%m-%d')  # 10 years
         if end_date is None:
             end_date = datetime.now().strftime('%Y-%m-%d')
         
-        print(f"Fetching multi-factor data for {variables} from intelligence-main")
+        # Create cache key
+        cache_key = f"{','.join(sorted(variables))}_{start_date}_{end_date}"
+        
+        # Check if we have valid cached data
+        if cache_key in self._historical_data_cache:
+            cache_time = self._cache_expiry.get(cache_key, datetime.min)
+            if datetime.now() < cache_time:
+                print(f"Using cached multi-factor data for {variables}")
+                return self._historical_data_cache[cache_key]
+        
+        print(f"Fetching fresh multi-factor data for {variables} (10 years)")
+        print(f"Date range: {start_date} to {end_date}")
+        print("=" * 80)
+        
+        # Use Streamlit's progress bar for better UX
+        progress_bar = st.progress(0, text="Fetching historical data...")
         
         data_frames = {}
+        total_vars = len(variables)
         
-        for var in variables:
+        # Track success/failure for each variable
+        variable_results = {}
+        
+        for idx, var in enumerate(variables):
+            progress_bar.progress((idx) / total_vars, text=f"Fetching {var} data...")
+            
+            print(f"\n[{idx+1}/{total_vars}] Processing variable: {var}")
+            print("-" * 50)
+            
+            variable_results[var] = {
+                'status': 'FAILED',
+                'vectors_found': 0,
+                'data_points_extracted': 0,
+                'final_data_points': 0,
+                'error_message': None,
+                'source': None
+            }
+            
             if var == 'BTC':
-                # Handle Bitcoin separately using yfinance as fallback
-                print(f"Fetching {var} from yfinance...")
+                # Handle Bitcoin separately using yfinance
+                print(f"📊 Fetching {var} from yfinance...")
+                variable_results[var]['source'] = 'yfinance'
                 try:
                     ticker = yf.Ticker('BTC-USD')
                     btc_data = ticker.history(start=start_date, end=end_date)
                     if not btc_data.empty:
                         data_frames[var] = btc_data['Close']
-                        print(f"Successfully fetched {var}: {len(btc_data)} days")
+                        variable_results[var]['status'] = 'SUCCESS'
+                        variable_results[var]['final_data_points'] = len(btc_data)
+                        print(f"✅ Successfully fetched {var}: {len(btc_data)} days")
                     else:
-                        print(f"No Bitcoin data found")
+                        variable_results[var]['error_message'] = "No Bitcoin data found in yfinance"
+                        print(f"❌ No Bitcoin data found")
                 except Exception as e:
-                    print(f"Error fetching Bitcoin data: {e}")
+                    variable_results[var]['error_message'] = f"yfinance error: {str(e)}"
+                    print(f"❌ Error fetching Bitcoin data: {e}")
                 continue
             
-            # Special handling for GOLD variables
-            if var.upper() in ['GOLD', 'GLD', 'XAU']:
-                print(f"Fetching {var} using direct gold extraction...")
-                try:
-                    gold_data = self.fetch_gold_data_direct()
-                    if gold_data is not None and len(gold_data) > 0:
-                        # Filter by date range
-                        start_dt = pd.to_datetime(start_date)
-                        end_dt = pd.to_datetime(end_date)
-                        
-                        filtered_data = gold_data[
-                            (gold_data.index >= start_dt) & 
-                            (gold_data.index <= end_dt)
-                        ]
-                        
-                        if len(filtered_data) > 0:
-                            data_frames[var] = filtered_data
-                            print(f"Successfully fetched {var}: {len(filtered_data)} days")
-                        else:
-                            print(f"No gold data in date range for {var}")
-                    else:
-                        print(f"Could not extract gold data for {var}")
-                except Exception as e:
-                    print(f"Error fetching gold data for {var}: {e}")
-                continue
-            
-            # Find matching vector in intelligence-main for other variables
-            print(f"Finding vector for {var}...")
+            # Find and fetch data from Pinecone
+            variable_results[var]['source'] = 'pinecone'
+            print(f"🔍 Finding vectors for {var}...")
             vector_info = self.find_vector_for_variable(var)
             
             if vector_info:
-                # Fetch data from Pinecone
-                print(f"Fetching {var} data from Pinecone vector {vector_info['id']}...")
+                variable_results[var]['vectors_found'] = len(vector_info.get('vectors', []))
+                print(f"✅ Found {variable_results[var]['vectors_found']} vectors for {var}")
+                
+                # Fetch data from all vectors
+                print(f"📈 Extracting time series data...")
                 series_data = self.fetch_data_from_pinecone(vector_info)
                 
                 if series_data is not None and len(series_data) > 0:
+                    variable_results[var]['data_points_extracted'] = len(series_data)
+                    print(f"✅ Extracted {len(series_data)} raw data points")
+                    
                     # Filter by date range
                     start_dt = pd.to_datetime(start_date)
                     end_dt = pd.to_datetime(end_date)
@@ -394,13 +377,57 @@ Respond with JSON:
                     
                     if len(filtered_data) > 0:
                         data_frames[var] = filtered_data
-                        print(f"Successfully fetched {var}: {len(filtered_data)} days")
+                        variable_results[var]['status'] = 'SUCCESS'
+                        variable_results[var]['final_data_points'] = len(filtered_data)
+                        print(f"✅ Successfully fetched {var}: {len(filtered_data)} days in date range")
                     else:
-                        print(f"No data in date range for {var}")
+                        variable_results[var]['error_message'] = f"No data points in date range {start_date} to {end_date}"
+                        print(f"❌ No data in date range for {var}")
                 else:
-                    print(f"Could not extract time series for {var}")
+                    variable_results[var]['error_message'] = "Could not extract time series from vectors"
+                    print(f"❌ Could not extract time series for {var}")
             else:
-                print(f"Could not find matching vector for {var}")
+                variable_results[var]['error_message'] = "No matching vectors found in Pinecone"
+                print(f"❌ Could not find matching vectors for {var}")
+        
+        progress_bar.progress(1.0, text="Data fetching complete!")
+        
+        # Print comprehensive summary
+        print("\n" + "=" * 80)
+        print("📊 VARIABLE FETCHING SUMMARY")
+        print("=" * 80)
+        
+        successful_vars = []
+        failed_vars = []
+        
+        for var, result in variable_results.items():
+            status_icon = "✅" if result['status'] == 'SUCCESS' else "❌"
+            print(f"{status_icon} {var:<35} | {result['status']:<7} | Source: {result['source']:<10}")
+            
+            if result['status'] == 'SUCCESS':
+                successful_vars.append(var)
+                if result['source'] == 'pinecone':
+                    print(f"    └─ Vectors: {result['vectors_found']:<6} | Raw Points: {result['data_points_extracted']:<6} | Final: {result['final_data_points']}")
+                else:
+                    print(f"    └─ Final Data Points: {result['final_data_points']}")
+            else:
+                failed_vars.append(var)
+                if result['vectors_found'] > 0:
+                    print(f"    └─ Vectors: {result['vectors_found']:<6} | Raw Points: {result['data_points_extracted']:<6} | Error: {result['error_message']}")
+                else:
+                    print(f"    └─ Error: {result['error_message']}")
+        
+        print("-" * 80)
+        success_rate = len(successful_vars) / len(variables) * 100
+        print(f"📈 SUCCESS RATE: {len(successful_vars)}/{len(variables)} variables ({success_rate:.1f}%)")
+        
+        if successful_vars:
+            print(f"✅ SUCCESSFUL: {', '.join(successful_vars)}")
+        
+        if failed_vars:
+            print(f"❌ FAILED: {', '.join(failed_vars)}")
+        
+        print("=" * 80)
         
         if not data_frames:
             raise ValueError("No data could be fetched for any variables")
@@ -417,9 +444,14 @@ Respond with JSON:
         combined_df = pd.DataFrame(normalized_data)
         
         # Forward fill missing values and drop any remaining NaN rows
-        combined_df = combined_df.fillna(method='ffill').dropna()
+        combined_df = combined_df.ffill().dropna()
         
-        print(f"Successfully fetched multi-factor data: {len(combined_df)} days, {len(combined_df.columns)} variables")
+        print(f"🎯 FINAL RESULT: Combined DataFrame with {len(combined_df)} days and {len(combined_df.columns)} variables")
+        
+        # Cache the results
+        self._historical_data_cache[cache_key] = combined_df
+        self._cache_expiry[cache_key] = datetime.now() + self._cache_duration
+        
         return combined_df
     
     def calculate_correlation_matrix(self, data_df):
@@ -566,10 +598,6 @@ Respond with JSON:
                     prev_price = simulated_paths[var][sim, day]
                     new_price = prev_price * (1 + daily_return)
                     simulated_paths[var][sim, day + 1] = max(new_price, 0.01)  # Prevent negative prices
-        
-        # Remove initial column (keep only simulated days)
-        for var in variables:
-            simulated_paths[var] = simulated_paths[var][:, 1:]
         
         print(f"Multi-factor simulation completed successfully")
         return simulated_paths

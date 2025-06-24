@@ -1,11 +1,13 @@
 """
-Monte Carlo simulation with GARCH+jumps modeling
+Monte Carlo simulation with GARCH+jumps modeling - Optimized Version
 """
 import numpy as np
 import pandas as pd
 from arch import arch_model
 import streamlit as st
 from .market_conditions import MarketCondition, adjust_mu_sigma_for_condition
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing
 
 class MonteCarloSimulator:
     def __init__(self, bitcoin_data, pinecone_client=None):
@@ -22,6 +24,26 @@ class MonteCarloSimulator:
         
         # Calibrate model parameters
         self._calibrate_parameters()
+        
+        # Cache for strategy conditions and multi-factor data
+        self._strategy_cache = {}
+        self._multi_factor_cache = {}
+        
+        # Pre-compute common values
+        self._precompute_common_values()
+    
+    def _precompute_common_values(self):
+        """Pre-compute commonly used values for optimization"""
+        # Pre-compute log returns for faster GARCH updates
+        self.log_returns = np.diff(np.log(self.prices))
+        
+        # Pre-compute volume statistics
+        self.vol_mean = self.vol_hist.mean()
+        self.vol_std = self.vol_hist.std()
+        
+        # Pre-compute price statistics
+        self.price_mean = self.prices.mean()
+        self.price_std = self.prices.std()
     
     def _calibrate_parameters(self):
         """
@@ -65,9 +87,9 @@ class MonteCarloSimulator:
         # Store initial variance
         self.initial_variance = daily_ret.var() * 10000
     
-    def generate_price_paths(self, n_simulations, simulation_days, market_condition=None, seed=42):
+    def generate_price_paths_vectorized(self, n_simulations, simulation_days, market_condition=None, seed=42):
         """
-        Generate Monte Carlo price paths using GARCH+jumps model with market condition adjustments
+        Optimized vectorized price path generation using NumPy broadcasting
         """
         MIN_PRICE = 1e-6
         rng = np.random.default_rng(seed)
@@ -77,58 +99,96 @@ class MonteCarloSimulator:
         sigma_multiplier = 1.0
         
         if market_condition:
-            # Calculate base volatility from GARCH parameters
             base_vol = np.sqrt(self.initial_variance) / 100
-            print(f"[PATH DEBUG] Calling adjust_mu_sigma_for_condition with mu={self.mu_daily:.6f}, sigma={base_vol:.4f}")
-            mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(
-                self.mu_daily, base_vol, market_condition
-            )
-            sigma_multiplier = sigma_adjusted / base_vol
-            print(f"[PATH DEBUG] Market condition applied: mu_adjusted={mu_adjusted:.6f}, sigma_multiplier={sigma_multiplier:.4f}")
-        else:
-            print(f"[PATH DEBUG] No market condition applied, using base mu={self.mu_daily:.6f}")
+            mu_adjusted, sigma_adjusted = adjust_mu_sigma_for_condition(self.mu_daily, base_vol, market_condition)
+            sigma_multiplier = sigma_adjusted / base_vol if base_vol > 0 else 1.0
         
-        close_paths = np.empty((n_simulations, simulation_days + 1))
-        close_paths[:, 0] = self.prices[-1]  # Start from current price
+        # Initialize arrays for all paths at once
+        close_paths = np.zeros((n_simulations, simulation_days + 1))
+        close_paths[:, 0] = self.prices[-1]
         
-        for path in range(n_simulations):
-            sigma2 = self.initial_variance
-            closes = [self.prices[-1]]
+        # Pre-generate all random numbers for efficiency
+        Z_all = rng.standard_normal((n_simulations, simulation_days))
+        J_poisson = rng.poisson(self.jump_lambda, (n_simulations, simulation_days))
+        J_normal = rng.normal(self.jump_mu, self.jump_sigma, (n_simulations, simulation_days))
+        J_all = J_poisson * J_normal
+        
+        # Vectorized GARCH variance evolution
+        sigma2 = np.full(n_simulations, self.initial_variance)
+        
+        for t in range(simulation_days):
+            # Update variance (simplified for vectorization)
+            if t > 0:
+                prev_ret = np.log(close_paths[:, t] / close_paths[:, t-1]) * 100
+                sigma2 = self.omega + self.alpha * prev_ret**2 + self.beta * sigma2
             
-            for t in range(1, simulation_days + 1):
-                # Protect against zero or negative prices
-                prev = max(closes[-1], MIN_PRICE)
-                prev2 = max(closes[-2], MIN_PRICE) if t > 1 else prev
-                
-                # Calculate previous return for GARCH
-                last_ret = np.log(prev / prev2) * 100 if t > 1 else 0
-                
-                # Update variance using GARCH(1,1)
-                sigma2 = self.omega + self.alpha * last_ret**2 + self.beta * sigma2
-                sigma_t = np.sqrt(max(sigma2, 1e-12)) / 100 * sigma_multiplier
-                
-                # Generate random components
-                Z = rng.standard_normal()
-                J = rng.poisson(self.jump_lambda) * rng.normal(self.jump_mu, self.jump_sigma)
-                
-                # Calculate return with market condition adjustment
-                ret = mu_adjusted - 0.5 * sigma_t**2 + sigma_t * Z + J
-                
-                # Debug logging for first few price calculations
-                if path == 0 and t <= 3:
-                    print(f"[PATH DEBUG] Day {t}: mu_adj={mu_adjusted:.6f}, sigma_t={sigma_t:.4f}, Z={Z:.4f}, J={J:.4f}")
-                    print(f"[PATH DEBUG] Day {t}: ret={ret:.6f}, prev_price={prev:.2f}")
-                
-                # Calculate new price
-                price = prev * np.exp(ret)
-                closes.append(max(price, MIN_PRICE))
-                
-                if path == 0 and t <= 3:
-                    print(f"[PATH DEBUG] Day {t}: new_price={price:.2f}, change={((price/prev)-1)*100:.2f}%")
+            sigma_t = np.sqrt(np.maximum(sigma2, 1e-12)) / 100 * sigma_multiplier
             
-            close_paths[path] = closes
-        
+            # Calculate returns for all paths at once
+            ret = mu_adjusted - 0.5 * sigma_t**2 + sigma_t * Z_all[:, t] + J_all[:, t]
+            
+            # Update prices (vectorized)
+            close_paths[:, t + 1] = close_paths[:, t] * np.exp(ret)
+            close_paths[:, t + 1] = np.maximum(close_paths[:, t + 1], MIN_PRICE)
+
         return close_paths
+    
+    # Use the optimized version as the default
+    generate_price_paths = generate_price_paths_vectorized
+    
+    def synthesize_ohlcv_batch_optimized(self, close_paths, start_date):
+        """
+        Optimized batch OHLCV synthesis using NumPy operations
+        """
+        n_sims, n_days = close_paths.shape
+        dates = pd.date_range(start=start_date, periods=n_days, freq="D")
+        
+        # Pre-generate random volumes for all simulations at once
+        rng = np.random.default_rng(42)
+        vol_indices = rng.integers(0, len(self.vol_hist), size=(n_sims, n_days))
+        vol_matrix = self.vol_hist[vol_indices]
+        
+        # Pre-calculate returns for all paths
+        returns = np.zeros_like(close_paths)
+        returns[:, 1:] = close_paths[:, 1:] / close_paths[:, :-1] - 1
+        returns_abs = np.abs(returns)
+        
+        # Create OHLCV data for all simulations
+        ohlcv_data = []
+        
+        # Process in chunks for memory efficiency
+        chunk_size = min(1000, n_sims)
+        
+        for chunk_start in range(0, n_sims, chunk_size):
+            chunk_end = min(chunk_start + chunk_size, n_sims)
+            chunk_indices = range(chunk_start, chunk_end)
+            
+            for i in chunk_indices:
+                close_path = close_paths[i]
+                
+                # Vectorized OHLC calculation
+                closes = pd.Series(close_path, index=dates, name="Close")
+                opens = closes.shift(1).fillna(closes.iloc[0])
+                
+                # Efficient high/low calculation
+                high_multiplier = 1 + 0.5 * returns_abs[i]
+                low_multiplier = 1 - 0.5 * returns_abs[i]
+                
+                high = closes * high_multiplier
+                low = closes * low_multiplier
+                
+                ohlcv_data.append(pd.DataFrame({
+                    "Open": opens,
+                    "High": high, 
+                    "Low": low,
+                    "Close": closes,
+                    "Volume": vol_matrix[i]
+                }))
+        
+        return ohlcv_data
+    
+    # Use optimized version as default
+    synthesize_ohlcv_batch = synthesize_ohlcv_batch_optimized
     
     def synthesize_ohlcv(self, close_path, start_date):
         """
@@ -156,158 +216,186 @@ class MonteCarloSimulator:
             "Volume": vol
         })
     
-    def vwap(self, df, window):
-        """Calculate Volume Weighted Average Price"""
-        pv = df["Close"] * df["Volume"]
-        return pv.rolling(window).sum() / df["Volume"].rolling(window).sum()
+
     
-    def cemd_strategy(self, df, spread_threshold=2.0, holding_period=5, risk_percent=100.0):
-        """
-        Default CEMD (Corporate vs Retail Momentum Divergence) strategy
-        """
-        df = df.copy()
-        df["VW"] = self.vwap(df, 20)
-        df["rng"] = (df["High"] - df["Low"]) / df["Close"] * 100
+    def execute_strategy_cached(self, df, strategy):
+        """Execute strategy with caching for repeated calls"""
+        # Create a hash of the strategy for caching
+        strategy_hash = str(strategy) if isinstance(strategy, dict) else str(type(strategy))
+        df_hash = str(len(df)) + str(df.index[0]) + str(df.index[-1])
+        cache_key = f"{strategy_hash}_{df_hash}"
         
-        # Calculate momentum and pressure
-        mom = (df["Close"] - df["Open"]) / df["Open"] * 100
-        press = df["Volume"] * mom
-        inst = press.rolling(10).mean()
-        retail = press.rolling(30).mean()
-        div = (inst - retail) / (retail.abs() + 1e-4) * 100
-        rng20 = df["rng"].rolling(20).mean()
-        
-        # Generate signals
-        long_sig = (div > spread_threshold) & (df["Close"] > df["VW"]) & (df["rng"] < rng20)
-        short_sig = (div < -spread_threshold) & (df["Close"] < df["VW"]) & (df["rng"] < rng20)
+        if cache_key in self._strategy_cache:
+            return self._strategy_cache[cache_key].copy()
         
         # Execute strategy
-        pos, days, pl = 0, 0, []
-        for i in range(len(df)):
-            # Exit conditions
-            if pos and (days >= holding_period or df.index[i].weekday() == 4):
-                pos = 0
-                days = 0
-            
-            # Entry conditions
-            if not pos:
-                if long_sig.iloc[i]:
-                    pos = 1
-                elif short_sig.iloc[i]:
-                    pos = -1
-            
-            if pos:
-                days += 1
-            
-            # Calculate return
-            ret = pos * (df["Close"].iloc[i] / df["Close"].iloc[i-1] - 1) if i else 0
-            ret = max(ret, -0.9999)  # Cap at -99.99%
-            pl.append(ret * (risk_percent / 100))
+        result = self.execute_strategy(df, strategy)
         
-        return pd.Series(pl, index=df.index)
+        # Cache result (limit cache size)
+        if len(self._strategy_cache) > 1000:
+            # Remove oldest entries
+            self._strategy_cache = dict(list(self._strategy_cache.items())[-500:])
+        
+        self._strategy_cache[cache_key] = result.copy()
+        return result
     
-    def execute_strategy(self, df, strategy=None):
+    def execute_strategy(self, df, strategy):
         """
-        Execute strategy - either default CEMD or processed strategy from Pinecone
+        Execute a strategy from Pinecone. A valid strategy must be provided.
         """
-        if strategy is None or strategy == "CEMD (Default)":
-            return self.cemd_strategy(df)
-        else:
-            try:
-                # Import strategy processor here to avoid circular imports
-                from .strategy_processor import StrategyProcessor
-                processor = StrategyProcessor()
-                
-                # Execute strategy using its conditions
-                if isinstance(strategy, dict):
-                    if 'conditions' in strategy:
-                        # Strategy object with conditions
-                        return processor.execute_strategy_conditions(df, strategy['conditions'])
-                    else:
-                        # Direct conditions JSON from OpenAI
-                        return processor.execute_strategy_conditions(df, strategy)
-                else:
-                    # Fallback to default strategy
-                    return self.cemd_strategy(df)
+        if strategy is None:
+            raise ValueError("No strategy provided. A valid strategy must be selected to run simulation.")
+        
+        # Strategy must be a dictionary containing conditions
+        if not isinstance(strategy, dict):
+            raise ValueError(f"Invalid strategy format. Expected a dictionary, but got {type(strategy)}. Please select a valid strategy.")
+        
+        try:
+            # Import strategy processor here to avoid circular imports
+            from .strategy_processor import StrategyProcessor
+            processor = StrategyProcessor()
+            
+            # The strategy object can come in two forms from Pinecone/frontend
+            conditions = strategy.get('conditions', strategy)
+            return processor.execute_strategy_conditions(df, conditions)
                     
-            except Exception as e:
-                print(f"Failed to execute strategy, using default CEMD: {str(e)}")
-                return self.cemd_strategy(df)
+        except Exception as e:
+            # Add context to the error and re-raise it.
+            # This will stop the simulation and display the error in the Streamlit app.
+            error_message = f"Execution failed for strategy '{strategy.get('id', 'Unknown')}'. Reason: {str(e)}"
+            print(f"[STRATEGY ERROR] {error_message}")
+            raise RuntimeError(error_message) from e
     
     def calculate_equity_curve(self, returns):
         """Calculate equity curve from returns"""
         return (1 + returns).cumprod()
     
-    def run_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+    def run_simulation(self, n_simulations, simulation_days, selected_strategy, 
                       market_condition=None, progress_callback=None, simulation_mode='btc_only', 
                       required_variables=None):
         """
-        Run complete Monte Carlo simulation with market condition scenarios and multi-factor support
+        Run complete Monte Carlo simulation with market condition scenarios and multi-factor support.
+        A valid strategy must be provided.
         """
+        if selected_strategy is None:
+            raise ValueError("No strategy provided. A valid strategy must be selected to run simulation.")
+            
         if simulation_mode == 'multi_factor' and required_variables:
             return self.run_multi_factor_simulation(
                 n_simulations, simulation_days, selected_strategy, 
                 market_condition, progress_callback, required_variables
             )
         else:
-            return self.run_btc_only_simulation(
+            return self.run_btc_only_simulation_optimized(
                 n_simulations, simulation_days, selected_strategy, 
                 market_condition, progress_callback
             )
     
-    def run_btc_only_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+    def run_btc_only_simulation_optimized(self, n_simulations, simulation_days, selected_strategy, 
                                market_condition=None, progress_callback=None):
         """
-        Run BTC-only Monte Carlo simulation (original logic)
+        Optimized BTC-only Monte Carlo simulation with parallel processing
         """
-        # Generate price paths with market condition adjustments
-        close_paths = self.generate_price_paths(n_simulations, simulation_days, market_condition)
+        import time
+        start_time = time.time()
         
-        # Calculate strategy performance for each path
+        # Generate price paths with market condition adjustments
+        print(f"Generating {n_simulations} price paths...")
+        close_paths = self.generate_price_paths_vectorized(n_simulations, simulation_days, market_condition)
+        
+        # Pre-generate all OHLCV data at once for better performance
+        print(f"Synthesizing OHLCV data for all paths...")
+        start_date = self.last_date + pd.Timedelta(days=1)
+        
+        # Batch synthesize OHLCV data
+        all_ohlcv_data = self.synthesize_ohlcv_batch_optimized(close_paths, start_date)
+        
+        # Validate that a strategy is provided
+        if selected_strategy is None:
+            raise ValueError("No strategy provided. A valid strategy must be selected to run simulation.")
+        
+        # Process strategy with parallel processing
+        print("Processing strategy with parallel execution...")
+        
+        # Determine optimal number of workers
+        n_workers = min(multiprocessing.cpu_count(), 8)
+        batch_size = max(10, n_simulations // (n_workers * 10))
+        
         cagr_values = []
         drawdown_values = []
         
-        for i, path in enumerate(close_paths):
-            if progress_callback:
-                progress_callback(i / len(close_paths))
+        def process_batch(batch_data):
+            """Process a batch of simulations"""
+            batch_results = {'cagr': [], 'drawdown': []}
             
-            # Create OHLCV data
-            ohlcv_df = self.synthesize_ohlcv(path, self.last_date + pd.Timedelta(days=1))
+            for ohlcv_df in batch_data:
+                try:
+                    returns = self.execute_strategy_cached(ohlcv_df, selected_strategy)
+                    equity = self.calculate_equity_curve(returns)
+                    
+                    if len(equity) == 0 or equity.iloc[-1] <= 0 or pd.isna(equity.iloc[-1]):
+                        batch_results['cagr'].append(-100.0)
+                        batch_results['drawdown'].append(-100.0)
+                    else:
+                        final_equity = equity.iloc[-1]
+                        cagr = (final_equity ** (365 / len(equity)) - 1) * 100
+                        batch_results['cagr'].append(cagr)
+                        
+                        max_dd = (equity / equity.cummax() - 1).min() * 100
+                        batch_results['drawdown'].append(max_dd)
+                except Exception as e:
+                    print(f"Strategy execution failed: {e}")
+                    batch_results['cagr'].append(-100.0)
+                    batch_results['drawdown'].append(-100.0)
             
-            # Execute strategy
-            returns = self.execute_strategy(ohlcv_df, selected_strategy)
+            return batch_results
+        
+        # Process in batches using ThreadPoolExecutor (GIL-friendly for I/O bound operations)
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            futures = []
             
-            # Calculate equity curve
-            equity = self.calculate_equity_curve(returns)
-            
-            if len(equity) == 0 or equity.iloc[-1] <= 0 or pd.isna(equity.iloc[-1]):
-                cagr_values.append(-100.0)
-                drawdown_values.append(-100.0)
-            else:
-                # Calculate CAGR
-                final_equity = equity.iloc[-1]
-                cagr = (final_equity ** (365 / len(equity)) - 1) * 100
-                cagr_values.append(cagr)
+            for batch_start in range(0, n_simulations, batch_size):
+                batch_end = min(batch_start + batch_size, n_simulations)
+                batch_ohlcv = all_ohlcv_data[batch_start:batch_end]
                 
-                # Calculate maximum drawdown
-                max_dd = (equity / equity.cummax() - 1).min() * 100
-                drawdown_values.append(max_dd)
+                future = executor.submit(process_batch, batch_ohlcv)
+                futures.append((future, batch_start, batch_end))
+            
+            # Collect results
+            for future, batch_start, batch_end in futures:
+                batch_results = future.result()
+                cagr_values.extend(batch_results['cagr'])
+                drawdown_values.extend(batch_results['drawdown'])
+                
+                # Update progress
+                if progress_callback:
+                    progress_callback(batch_end / n_simulations)
         
         if progress_callback:
             progress_callback(1.0)
         
         # Calculate summary statistics
+        cagr_array = np.array(cagr_values)
+        drawdown_array = np.array(drawdown_values)
+        
+        end_time = time.time()
+        print(f"Simulation completed in {end_time - start_time:.2f} seconds")
+        print(f"Average time per simulation: {(end_time - start_time) / n_simulations * 1000:.2f} ms")
+        
         results = {
             'simulation_mode': 'btc_only',
             'close_paths': close_paths,
-            'cagr_values': cagr_values,
-            'drawdown_values': drawdown_values,
-            'median_cagr': np.median(cagr_values),
-            'worst_decile_cagr': np.percentile(cagr_values, 10),
-            'median_max_drawdown': np.median(drawdown_values)
+            'cagr_values': cagr_array,
+            'drawdown_values': drawdown_array,
+            'median_cagr': np.median(cagr_array),
+            'worst_decile_cagr': np.percentile(cagr_array, 10),
+            'median_max_drawdown': np.median(drawdown_array)
         }
         
         return results
+    
+    # Use optimized version as default
+    run_btc_only_simulation = run_btc_only_simulation_optimized
     
     def _detect_strategy_variables(self, strategy):
         """
@@ -356,7 +444,7 @@ class MonteCarloSimulator:
         
         return codes
     
-    def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy=None, 
+    def run_multi_factor_simulation(self, n_simulations, simulation_days, selected_strategy, 
                                    market_condition=None, progress_callback=None, required_variables=None):
         """
         Run multi-factor Monte Carlo simulation with dynamic variable detection and regime-specific correlations
@@ -377,13 +465,37 @@ class MonteCarloSimulator:
         variable_codes = self._map_variables_to_codes(required_variables)
         print(f"Mapped to correlation codes: {variable_codes}")
         
-        # Fetch historical multi-factor data
-        data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
-        historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
-        available_variables = historical_data.columns.tolist()
-        available_codes = self._map_variables_to_codes(available_variables)
+        # Update progress for data fetching phase
+        if progress_callback:
+            progress_callback(0.1)  # 10% for data fetching start
+        
+        # Check cache for multi-factor data
+        cache_key = f"{','.join(sorted(required_variables))}_{market_condition}"
+        
+        if cache_key in self._multi_factor_cache:
+            print("Using cached multi-factor data")
+            historical_data = self._multi_factor_cache[cache_key]['historical_data']
+            available_variables = self._multi_factor_cache[cache_key]['available_variables']
+            available_codes = self._multi_factor_cache[cache_key]['available_codes']
+        else:
+            # Fetch historical multi-factor data
+            data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
+            historical_data = data_fetcher.fetch_multi_factor_data(required_variables)
+            available_variables = historical_data.columns.tolist()
+            available_codes = self._map_variables_to_codes(available_variables)
+            
+            # Cache the data
+            self._multi_factor_cache[cache_key] = {
+                'historical_data': historical_data,
+                'available_variables': available_variables,
+                'available_codes': available_codes
+            }
         
         print(f"Successfully fetched data for {len(available_variables)} variables: {available_variables}")
+        
+        # Update progress after data fetching
+        if progress_callback:
+            progress_callback(0.2)  # 20% after data fetch complete
         
         # Generate regime-specific scenarios for each available variable
         if market_condition is not None:
@@ -418,6 +530,7 @@ class MonteCarloSimulator:
                 print()
             else:
                 # Fallback to historical correlation
+                data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
                 correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
                 print(f"\nUsing historical correlation matrix (regime data unavailable):")
                 import pandas as pd
@@ -428,10 +541,12 @@ class MonteCarloSimulator:
         else:
             # No market condition specified, use base parameters
             regime_scenarios = None
+            data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
             correlation_matrix = data_fetcher.calculate_correlation_matrix(historical_data)
             print("Using historical correlation matrix and base parameters")
         
         # Generate correlated paths with regime-specific scenarios
+        data_fetcher = MultiFactorDataFetcher(self.pinecone_client)
         simulated_paths = data_fetcher.simulate_multi_factor_series(
             historical_data, n_simulations, simulation_days, 
             correlation_matrix, market_condition=None, regime_scenarios=regime_scenarios
@@ -441,9 +556,15 @@ class MonteCarloSimulator:
         cagr_values = []
         drawdown_values = []
         
-        for i in range(n_simulations):
-            if progress_callback:
-                progress_callback(i / n_simulations)
+        # Process in parallel batches for efficiency
+        batch_size = min(100, n_simulations)
+        
+        for batch_start in range(0, n_simulations, batch_size):
+            batch_end = min(batch_start + batch_size, n_simulations)
+            
+            for i in range(batch_start, batch_end):
+                if progress_callback:
+                    progress_callback(0.2 + 0.8 * i / n_simulations)
             
             # Create multi-factor DataFrame for this simulation
             sim_data = {}
@@ -453,7 +574,7 @@ class MonteCarloSimulator:
             
             # Create date index
             start_date = self.last_date + pd.Timedelta(days=1)
-            date_index = pd.date_range(start=start_date, periods=simulation_days, freq='D')
+            date_index = pd.date_range(start=start_date, periods=simulation_days + 1, freq='D')
             
             multi_factor_df = pd.DataFrame(sim_data, index=date_index)
             
