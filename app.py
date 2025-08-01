@@ -8,6 +8,12 @@ import os
 from datetime import datetime, timedelta
 import time
 
+# Load environment variables from .env file if it exists
+from pathlib import Path
+if Path('.env').exists():
+    from dotenv import load_dotenv
+    load_dotenv()
+
 from utils.bitcoin_data import fetch_bitcoin_data
 from utils.monte_carlo import MonteCarloSimulator
 from utils.pinecone_client import PineconeClient
@@ -520,7 +526,7 @@ n_simulations = st.sidebar.slider(
     "Number of Simulations",
     min_value=1000,
     max_value=20000,
-    value=20000,
+    value=1000,
     step=1000,
     help="Higher numbers provide more accurate results but take longer to compute"
 )
@@ -530,7 +536,7 @@ simulation_days = st.sidebar.slider(
     "Simulation Period (Days)",
     min_value=30,
     max_value=365,
-    value=365,
+    value=30,
     step=5,
     help="Number of days to simulate forward"
 )

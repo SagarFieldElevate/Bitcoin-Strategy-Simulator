@@ -40,7 +40,20 @@ VARIABLE_NAME_MAPPING = {
     "Fear & Greed Index": "FEAR_GREED",
     "US Equity Market Capitalization (Billions USD)": "EQUITY_CAP",
     "US Federal Funds Rate": "FED_RATE",
-    "Baltic Dry Index": "BALTIC"
+    "Baltic Dry Index": "BALTIC",
+    # Common alternative names
+    "BTC": "BTC",
+    "GOLD": "GOLD",
+    "WTI": "WTI",
+    "SPY": "SPY",
+    "QQQ": "QQQ",
+    "TIPS_10Y": "TIPS_10Y",
+    "TIPS_5Y": "TIPS_5Y",
+    "TIPS_20Y": "TIPS_20Y",
+    "TIPS_30Y": "TIPS_30Y",
+    "TREASURY_10Y": "TREASURY_10Y",
+    "VIX": "VIX",
+    "DXY": "DXY"
 }
 
 def is_daily_only_strategy(strategy):
@@ -75,6 +88,91 @@ REGIME_CORRELATIONS = {
         "ETH_VOLUME": {"BTC": 0.6, "GOLD": -0.4, "WTI": 0.3, "SPY": 0.4, "QQQ": 0.5, "TREASURY_10Y": -0.5, "TIPS_10Y": -0.4, "TIPS_5Y": -0.3, "TIPS_20Y": -0.5, "TIPS_30Y": -0.4, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.7, "FEAR_GREED": -0.6},
         "DEX_VOLUME": {"BTC": 0.5, "GOLD": -0.3, "WTI": 0.2, "SPY": 0.3, "QQQ": 0.4, "TREASURY_10Y": -0.4, "TIPS_10Y": -0.3, "TIPS_5Y": -0.2, "TIPS_20Y": -0.4, "TIPS_30Y": -0.3, "ETH_VOLUME": 0.7, "DEX_VOLUME": 1.0, "FEAR_GREED": -0.5},
         "FEAR_GREED": {"BTC": -0.8, "GOLD": 0.4, "WTI": -0.3, "SPY": -0.7, "QQQ": -0.8, "TREASURY_10Y": 0.5, "TIPS_10Y": 0.4, "TIPS_5Y": 0.3, "TIPS_20Y": 0.5, "TIPS_30Y": 0.4, "ETH_VOLUME": -0.6, "DEX_VOLUME": -0.5, "FEAR_GREED": 1.0}
+    },
+    
+    "HIGH_VOL_UP": {
+        # Risk-on rally scenario - everything rallies together
+        "BTC":  {"BTC": 1.0, "GOLD": -0.1, "WTI": 0.55, "SPY": 0.75, "QQQ": 0.8, "TREASURY_10Y": -0.4, "TIPS_10Y": -0.35, "TIPS_5Y": -0.3, "TIPS_20Y": -0.4, "TIPS_30Y": -0.35, "ETH_VOLUME": 0.85, "DEX_VOLUME": 0.8, "FEAR_GREED": 0.7},
+        "GOLD": {"BTC": -0.1, "GOLD": 1.0, "WTI": 0.4, "SPY": -0.2, "QQQ": -0.25, "TREASURY_10Y": 0.3, "TIPS_10Y": 0.35, "TIPS_5Y": 0.3, "TIPS_20Y": 0.35, "TIPS_30Y": 0.35, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": -0.2},
+        "WTI":  {"BTC": 0.55, "GOLD": 0.4, "WTI": 1.0, "SPY": 0.6, "QQQ": 0.55, "TREASURY_10Y": -0.3, "TIPS_10Y": -0.25, "TIPS_5Y": -0.2, "TIPS_20Y": -0.3, "TIPS_30Y": -0.25, "ETH_VOLUME": 0.5, "DEX_VOLUME": 0.45, "FEAR_GREED": 0.5},
+        "SPY":  {"BTC": 0.75, "GOLD": -0.2, "WTI": 0.6, "SPY": 1.0, "QQQ": 0.95, "TREASURY_10Y": -0.3, "TIPS_10Y": -0.25, "TIPS_5Y": -0.2, "TIPS_20Y": -0.3, "TIPS_30Y": -0.25, "ETH_VOLUME": 0.7, "DEX_VOLUME": 0.65, "FEAR_GREED": 0.65},
+        "QQQ":  {"BTC": 0.8, "GOLD": -0.25, "WTI": 0.55, "SPY": 0.95, "QQQ": 1.0, "TREASURY_10Y": -0.35, "TIPS_10Y": -0.3, "TIPS_5Y": -0.25, "TIPS_20Y": -0.35, "TIPS_30Y": -0.3, "ETH_VOLUME": 0.75, "DEX_VOLUME": 0.7, "FEAR_GREED": 0.7},
+        "TREASURY_10Y": {"BTC": -0.4, "GOLD": 0.3, "WTI": -0.3, "SPY": -0.3, "QQQ": -0.35, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.85, "TIPS_5Y": 0.75, "TIPS_20Y": 0.9, "TIPS_30Y": 0.85, "ETH_VOLUME": -0.35, "DEX_VOLUME": -0.3, "FEAR_GREED": -0.3},
+        "TIPS_10Y": {"BTC": -0.35, "GOLD": 0.35, "WTI": -0.25, "SPY": -0.25, "QQQ": -0.3, "TREASURY_10Y": 0.85, "TIPS_10Y": 1.0, "TIPS_5Y": 0.9, "TIPS_20Y": 0.95, "TIPS_30Y": 0.9, "ETH_VOLUME": -0.3, "DEX_VOLUME": -0.25, "FEAR_GREED": -0.25},
+        "TIPS_5Y": {"BTC": -0.3, "GOLD": 0.3, "WTI": -0.2, "SPY": -0.2, "QQQ": -0.25, "TREASURY_10Y": 0.75, "TIPS_10Y": 0.9, "TIPS_5Y": 1.0, "TIPS_20Y": 0.85, "TIPS_30Y": 0.8, "ETH_VOLUME": -0.25, "DEX_VOLUME": -0.2, "FEAR_GREED": -0.2},
+        "TIPS_20Y": {"BTC": -0.4, "GOLD": 0.35, "WTI": -0.3, "SPY": -0.3, "QQQ": -0.35, "TREASURY_10Y": 0.9, "TIPS_10Y": 0.95, "TIPS_5Y": 0.85, "TIPS_20Y": 1.0, "TIPS_30Y": 0.95, "ETH_VOLUME": -0.35, "DEX_VOLUME": -0.3, "FEAR_GREED": -0.3},
+        "TIPS_30Y": {"BTC": -0.35, "GOLD": 0.35, "WTI": -0.25, "SPY": -0.25, "QQQ": -0.3, "TREASURY_10Y": 0.85, "TIPS_10Y": 0.9, "TIPS_5Y": 0.8, "TIPS_20Y": 0.95, "TIPS_30Y": 1.0, "ETH_VOLUME": -0.3, "DEX_VOLUME": -0.25, "FEAR_GREED": -0.25},
+        "ETH_VOLUME": {"BTC": 0.85, "GOLD": -0.15, "WTI": 0.5, "SPY": 0.7, "QQQ": 0.75, "TREASURY_10Y": -0.35, "TIPS_10Y": -0.3, "TIPS_5Y": -0.25, "TIPS_20Y": -0.35, "TIPS_30Y": -0.3, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.9, "FEAR_GREED": 0.75},
+        "DEX_VOLUME": {"BTC": 0.8, "GOLD": -0.1, "WTI": 0.45, "SPY": 0.65, "QQQ": 0.7, "TREASURY_10Y": -0.3, "TIPS_10Y": -0.25, "TIPS_5Y": -0.2, "TIPS_20Y": -0.3, "TIPS_30Y": -0.25, "ETH_VOLUME": 0.9, "DEX_VOLUME": 1.0, "FEAR_GREED": 0.7},
+        "FEAR_GREED": {"BTC": 0.7, "GOLD": -0.2, "WTI": 0.5, "SPY": 0.65, "QQQ": 0.7, "TREASURY_10Y": -0.3, "TIPS_10Y": -0.25, "TIPS_5Y": -0.2, "TIPS_20Y": -0.3, "TIPS_30Y": -0.25, "ETH_VOLUME": 0.75, "DEX_VOLUME": 0.7, "FEAR_GREED": 1.0}
+    },
+    
+    "HIGH_VOL_STABLE": {
+        # Choppy/uncertain market - lower correlations overall
+        "BTC":  {"BTC": 1.0, "GOLD": 0.1, "WTI": 0.25, "SPY": 0.4, "QQQ": 0.45, "TREASURY_10Y": 0.0, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.7, "DEX_VOLUME": 0.65, "FEAR_GREED": 0.0},
+        "GOLD": {"BTC": 0.1, "GOLD": 1.0, "WTI": 0.3, "SPY": 0.0, "QQQ": -0.05, "TREASURY_10Y": 0.2, "TIPS_10Y": 0.25, "TIPS_5Y": 0.2, "TIPS_20Y": 0.25, "TIPS_30Y": 0.25, "ETH_VOLUME": 0.05, "DEX_VOLUME": 0.1, "FEAR_GREED": 0.1},
+        "WTI":  {"BTC": 0.25, "GOLD": 0.3, "WTI": 1.0, "SPY": 0.4, "QQQ": 0.35, "TREASURY_10Y": -0.1, "TIPS_10Y": -0.05, "TIPS_5Y": 0.0, "TIPS_20Y": -0.1, "TIPS_30Y": -0.05, "ETH_VOLUME": 0.2, "DEX_VOLUME": 0.15, "FEAR_GREED": 0.15},
+        "SPY":  {"BTC": 0.4, "GOLD": 0.0, "WTI": 0.4, "SPY": 1.0, "QQQ": 0.85, "TREASURY_10Y": -0.1, "TIPS_10Y": -0.05, "TIPS_5Y": 0.0, "TIPS_20Y": -0.1, "TIPS_30Y": -0.05, "ETH_VOLUME": 0.35, "DEX_VOLUME": 0.3, "FEAR_GREED": 0.2},
+        "QQQ":  {"BTC": 0.45, "GOLD": -0.05, "WTI": 0.35, "SPY": 0.85, "QQQ": 1.0, "TREASURY_10Y": -0.15, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.15, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.4, "DEX_VOLUME": 0.35, "FEAR_GREED": 0.25},
+        "TREASURY_10Y": {"BTC": 0.0, "GOLD": 0.2, "WTI": -0.1, "SPY": -0.1, "QQQ": -0.15, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.8, "TIPS_5Y": 0.7, "TIPS_20Y": 0.85, "TIPS_30Y": 0.8, "ETH_VOLUME": -0.05, "DEX_VOLUME": 0.0, "FEAR_GREED": 0.05},
+        "TIPS_10Y": {"BTC": -0.1, "GOLD": 0.25, "WTI": -0.05, "SPY": -0.05, "QQQ": -0.1, "TREASURY_10Y": 0.8, "TIPS_10Y": 1.0, "TIPS_5Y": 0.85, "TIPS_20Y": 0.9, "TIPS_30Y": 0.85, "ETH_VOLUME": -0.1, "DEX_VOLUME": -0.05, "FEAR_GREED": 0.0},
+        "TIPS_5Y": {"BTC": -0.05, "GOLD": 0.2, "WTI": 0.0, "SPY": 0.0, "QQQ": -0.05, "TREASURY_10Y": 0.7, "TIPS_10Y": 0.85, "TIPS_5Y": 1.0, "TIPS_20Y": 0.8, "TIPS_30Y": 0.75, "ETH_VOLUME": -0.05, "DEX_VOLUME": 0.0, "FEAR_GREED": 0.05},
+        "TIPS_20Y": {"BTC": -0.1, "GOLD": 0.25, "WTI": -0.1, "SPY": -0.1, "QQQ": -0.15, "TREASURY_10Y": 0.85, "TIPS_10Y": 0.9, "TIPS_5Y": 0.8, "TIPS_20Y": 1.0, "TIPS_30Y": 0.9, "ETH_VOLUME": -0.1, "DEX_VOLUME": -0.05, "FEAR_GREED": 0.0},
+        "TIPS_30Y": {"BTC": -0.1, "GOLD": 0.25, "WTI": -0.05, "SPY": -0.05, "QQQ": -0.1, "TREASURY_10Y": 0.8, "TIPS_10Y": 0.85, "TIPS_5Y": 0.75, "TIPS_20Y": 0.9, "TIPS_30Y": 1.0, "ETH_VOLUME": -0.1, "DEX_VOLUME": -0.05, "FEAR_GREED": 0.0},
+        "ETH_VOLUME": {"BTC": 0.7, "GOLD": 0.05, "WTI": 0.2, "SPY": 0.35, "QQQ": 0.4, "TREASURY_10Y": -0.05, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.8, "FEAR_GREED": 0.1},
+        "DEX_VOLUME": {"BTC": 0.65, "GOLD": 0.1, "WTI": 0.15, "SPY": 0.3, "QQQ": 0.35, "TREASURY_10Y": 0.0, "TIPS_10Y": -0.05, "TIPS_5Y": 0.0, "TIPS_20Y": -0.05, "TIPS_30Y": -0.05, "ETH_VOLUME": 0.8, "DEX_VOLUME": 1.0, "FEAR_GREED": 0.05},
+        "FEAR_GREED": {"BTC": 0.0, "GOLD": 0.1, "WTI": 0.15, "SPY": 0.2, "QQQ": 0.25, "TREASURY_10Y": 0.05, "TIPS_10Y": 0.0, "TIPS_5Y": 0.05, "TIPS_20Y": 0.0, "TIPS_30Y": 0.0, "ETH_VOLUME": 0.1, "DEX_VOLUME": 0.05, "FEAR_GREED": 1.0}
+    },
+    
+    "STABLE_VOL_UP": {
+        # Healthy bull market - moderate positive correlations
+        "BTC":  {"BTC": 1.0, "GOLD": -0.3, "WTI": 0.45, "SPY": 0.6, "QQQ": 0.65, "TREASURY_10Y": -0.2, "TIPS_10Y": -0.25, "TIPS_5Y": -0.2, "TIPS_20Y": -0.25, "TIPS_30Y": -0.25, "ETH_VOLUME": 0.8, "DEX_VOLUME": 0.75, "FEAR_GREED": 0.6},
+        "GOLD": {"BTC": -0.3, "GOLD": 1.0, "WTI": 0.35, "SPY": -0.4, "QQQ": -0.45, "TREASURY_10Y": 0.2, "TIPS_10Y": 0.25, "TIPS_5Y": 0.2, "TIPS_20Y": 0.25, "TIPS_30Y": 0.25, "ETH_VOLUME": -0.25, "DEX_VOLUME": -0.2, "FEAR_GREED": -0.35},
+        "WTI":  {"BTC": 0.45, "GOLD": 0.35, "WTI": 1.0, "SPY": 0.5, "QQQ": 0.45, "TREASURY_10Y": -0.15, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.15, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.4, "DEX_VOLUME": 0.35, "FEAR_GREED": 0.4},
+        "SPY":  {"BTC": 0.6, "GOLD": -0.4, "WTI": 0.5, "SPY": 1.0, "QQQ": 0.9, "TREASURY_10Y": 0.1, "TIPS_10Y": 0.05, "TIPS_5Y": 0.1, "TIPS_20Y": 0.05, "TIPS_30Y": 0.05, "ETH_VOLUME": 0.55, "DEX_VOLUME": 0.5, "FEAR_GREED": 0.55},
+        "QQQ":  {"BTC": 0.65, "GOLD": -0.45, "WTI": 0.45, "SPY": 0.9, "QQQ": 1.0, "TREASURY_10Y": 0.05, "TIPS_10Y": 0.0, "TIPS_5Y": 0.05, "TIPS_20Y": 0.0, "TIPS_30Y": 0.0, "ETH_VOLUME": 0.6, "DEX_VOLUME": 0.55, "FEAR_GREED": 0.6},
+        "TREASURY_10Y": {"BTC": -0.2, "GOLD": 0.2, "WTI": -0.15, "SPY": 0.1, "QQQ": 0.05, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.85, "TIPS_5Y": 0.75, "TIPS_20Y": 0.9, "TIPS_30Y": 0.85, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": -0.05},
+        "TIPS_10Y": {"BTC": -0.25, "GOLD": 0.25, "WTI": -0.1, "SPY": 0.05, "QQQ": 0.0, "TREASURY_10Y": 0.85, "TIPS_10Y": 1.0, "TIPS_5Y": 0.9, "TIPS_20Y": 0.95, "TIPS_30Y": 0.9, "ETH_VOLUME": -0.2, "DEX_VOLUME": -0.15, "FEAR_GREED": -0.1},
+        "TIPS_5Y": {"BTC": -0.2, "GOLD": 0.2, "WTI": -0.05, "SPY": 0.1, "QQQ": 0.05, "TREASURY_10Y": 0.75, "TIPS_10Y": 0.9, "TIPS_5Y": 1.0, "TIPS_20Y": 0.85, "TIPS_30Y": 0.8, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": -0.05},
+        "TIPS_20Y": {"BTC": -0.25, "GOLD": 0.25, "WTI": -0.15, "SPY": 0.05, "QQQ": 0.0, "TREASURY_10Y": 0.9, "TIPS_10Y": 0.95, "TIPS_5Y": 0.85, "TIPS_20Y": 1.0, "TIPS_30Y": 0.95, "ETH_VOLUME": -0.2, "DEX_VOLUME": -0.15, "FEAR_GREED": -0.1},
+        "TIPS_30Y": {"BTC": -0.25, "GOLD": 0.25, "WTI": -0.1, "SPY": 0.05, "QQQ": 0.0, "TREASURY_10Y": 0.85, "TIPS_10Y": 0.9, "TIPS_5Y": 0.8, "TIPS_20Y": 0.95, "TIPS_30Y": 1.0, "ETH_VOLUME": -0.2, "DEX_VOLUME": -0.15, "FEAR_GREED": -0.1},
+        "ETH_VOLUME": {"BTC": 0.8, "GOLD": -0.25, "WTI": 0.4, "SPY": 0.55, "QQQ": 0.6, "TREASURY_10Y": -0.15, "TIPS_10Y": -0.2, "TIPS_5Y": -0.15, "TIPS_20Y": -0.2, "TIPS_30Y": -0.2, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.85, "FEAR_GREED": 0.65},
+        "DEX_VOLUME": {"BTC": 0.75, "GOLD": -0.2, "WTI": 0.35, "SPY": 0.5, "QQQ": 0.55, "TREASURY_10Y": -0.1, "TIPS_10Y": -0.15, "TIPS_5Y": -0.1, "TIPS_20Y": -0.15, "TIPS_30Y": -0.15, "ETH_VOLUME": 0.85, "DEX_VOLUME": 1.0, "FEAR_GREED": 0.6},
+        "FEAR_GREED": {"BTC": 0.6, "GOLD": -0.35, "WTI": 0.4, "SPY": 0.55, "QQQ": 0.6, "TREASURY_10Y": -0.05, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.65, "DEX_VOLUME": 0.6, "FEAR_GREED": 1.0}
+    },
+    
+    "STABLE_VOL_DOWN": {
+        # Slow bear market - moderate correlations, some flight to safety
+        "BTC":  {"BTC": 1.0, "GOLD": 0.15, "WTI": 0.6, "SPY": 0.7, "QQQ": 0.72, "TREASURY_10Y": 0.3, "TIPS_10Y": 0.25, "TIPS_5Y": 0.2, "TIPS_20Y": 0.3, "TIPS_30Y": 0.25, "ETH_VOLUME": 0.65, "DEX_VOLUME": 0.6, "FEAR_GREED": -0.7},
+        "GOLD": {"BTC": 0.15, "GOLD": 1.0, "WTI": -0.3, "SPY": -0.1, "QQQ": -0.15, "TREASURY_10Y": 0.5, "TIPS_10Y": 0.55, "TIPS_5Y": 0.5, "TIPS_20Y": 0.55, "TIPS_30Y": 0.55, "ETH_VOLUME": 0.1, "DEX_VOLUME": 0.15, "FEAR_GREED": 0.3},
+        "WTI":  {"BTC": 0.6, "GOLD": -0.3, "WTI": 1.0, "SPY": 0.55, "QQQ": 0.5, "TREASURY_10Y": 0.1, "TIPS_10Y": 0.05, "TIPS_5Y": 0.0, "TIPS_20Y": 0.1, "TIPS_30Y": 0.05, "ETH_VOLUME": 0.5, "DEX_VOLUME": 0.45, "FEAR_GREED": -0.5},
+        "SPY":  {"BTC": 0.7, "GOLD": -0.1, "WTI": 0.55, "SPY": 1.0, "QQQ": 0.92, "TREASURY_10Y": -0.4, "TIPS_10Y": -0.45, "TIPS_5Y": -0.4, "TIPS_20Y": -0.45, "TIPS_30Y": -0.45, "ETH_VOLUME": 0.6, "DEX_VOLUME": 0.55, "FEAR_GREED": -0.65},
+        "QQQ":  {"BTC": 0.72, "GOLD": -0.15, "WTI": 0.5, "SPY": 0.92, "QQQ": 1.0, "TREASURY_10Y": -0.45, "TIPS_10Y": -0.5, "TIPS_5Y": -0.45, "TIPS_20Y": -0.5, "TIPS_30Y": -0.5, "ETH_VOLUME": 0.62, "DEX_VOLUME": 0.57, "FEAR_GREED": -0.68},
+        "TREASURY_10Y": {"BTC": 0.3, "GOLD": 0.5, "WTI": 0.1, "SPY": -0.4, "QQQ": -0.45, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.88, "TIPS_5Y": 0.78, "TIPS_20Y": 0.92, "TIPS_30Y": 0.88, "ETH_VOLUME": 0.25, "DEX_VOLUME": 0.3, "FEAR_GREED": 0.4},
+        "TIPS_10Y": {"BTC": 0.25, "GOLD": 0.55, "WTI": 0.05, "SPY": -0.45, "QQQ": -0.5, "TREASURY_10Y": 0.88, "TIPS_10Y": 1.0, "TIPS_5Y": 0.92, "TIPS_20Y": 0.96, "TIPS_30Y": 0.92, "ETH_VOLUME": 0.2, "DEX_VOLUME": 0.25, "FEAR_GREED": 0.45},
+        "TIPS_5Y": {"BTC": 0.2, "GOLD": 0.5, "WTI": 0.0, "SPY": -0.4, "QQQ": -0.45, "TREASURY_10Y": 0.78, "TIPS_10Y": 0.92, "TIPS_5Y": 1.0, "TIPS_20Y": 0.88, "TIPS_30Y": 0.82, "ETH_VOLUME": 0.15, "DEX_VOLUME": 0.2, "FEAR_GREED": 0.4},
+        "TIPS_20Y": {"BTC": 0.3, "GOLD": 0.55, "WTI": 0.1, "SPY": -0.45, "QQQ": -0.5, "TREASURY_10Y": 0.92, "TIPS_10Y": 0.96, "TIPS_5Y": 0.88, "TIPS_20Y": 1.0, "TIPS_30Y": 0.96, "ETH_VOLUME": 0.25, "DEX_VOLUME": 0.3, "FEAR_GREED": 0.45},
+        "TIPS_30Y": {"BTC": 0.25, "GOLD": 0.55, "WTI": 0.05, "SPY": -0.45, "QQQ": -0.5, "TREASURY_10Y": 0.88, "TIPS_10Y": 0.92, "TIPS_5Y": 0.82, "TIPS_20Y": 0.96, "TIPS_30Y": 1.0, "ETH_VOLUME": 0.2, "DEX_VOLUME": 0.25, "FEAR_GREED": 0.45},
+        "ETH_VOLUME": {"BTC": 0.65, "GOLD": 0.1, "WTI": 0.5, "SPY": 0.6, "QQQ": 0.62, "TREASURY_10Y": 0.25, "TIPS_10Y": 0.2, "TIPS_5Y": 0.15, "TIPS_20Y": 0.25, "TIPS_30Y": 0.2, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.75, "FEAR_GREED": -0.55},
+        "DEX_VOLUME": {"BTC": 0.6, "GOLD": 0.15, "WTI": 0.45, "SPY": 0.55, "QQQ": 0.57, "TREASURY_10Y": 0.3, "TIPS_10Y": 0.25, "TIPS_5Y": 0.2, "TIPS_20Y": 0.3, "TIPS_30Y": 0.25, "ETH_VOLUME": 0.75, "DEX_VOLUME": 1.0, "FEAR_GREED": -0.5},
+        "FEAR_GREED": {"BTC": -0.7, "GOLD": 0.3, "WTI": -0.5, "SPY": -0.65, "QQQ": -0.68, "TREASURY_10Y": 0.4, "TIPS_10Y": 0.45, "TIPS_5Y": 0.4, "TIPS_20Y": 0.45, "TIPS_30Y": 0.45, "ETH_VOLUME": -0.55, "DEX_VOLUME": -0.5, "FEAR_GREED": 1.0}
+    },
+    
+    "STABLE_VOL_STABLE": {
+        # Low volatility ranging market - weak correlations overall
+        "BTC":  {"BTC": 1.0, "GOLD": 0.0, "WTI": 0.2, "SPY": 0.3, "QQQ": 0.35, "TREASURY_10Y": -0.05, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.75, "DEX_VOLUME": 0.7, "FEAR_GREED": 0.4},
+        "GOLD": {"BTC": 0.0, "GOLD": 1.0, "WTI": 0.25, "SPY": -0.2, "QQQ": -0.25, "TREASURY_10Y": 0.25, "TIPS_10Y": 0.3, "TIPS_5Y": 0.25, "TIPS_20Y": 0.3, "TIPS_30Y": 0.3, "ETH_VOLUME": -0.05, "DEX_VOLUME": 0.0, "FEAR_GREED": -0.15},
+        "WTI":  {"BTC": 0.2, "GOLD": 0.25, "WTI": 1.0, "SPY": 0.35, "QQQ": 0.3, "TREASURY_10Y": -0.05, "TIPS_10Y": 0.0, "TIPS_5Y": 0.05, "TIPS_20Y": -0.05, "TIPS_30Y": 0.0, "ETH_VOLUME": 0.15, "DEX_VOLUME": 0.1, "FEAR_GREED": 0.25},
+        "SPY":  {"BTC": 0.3, "GOLD": -0.2, "WTI": 0.35, "SPY": 1.0, "QQQ": 0.88, "TREASURY_10Y": 0.0, "TIPS_10Y": -0.05, "TIPS_5Y": 0.0, "TIPS_20Y": -0.05, "TIPS_30Y": -0.05, "ETH_VOLUME": 0.25, "DEX_VOLUME": 0.2, "FEAR_GREED": 0.45},
+        "QQQ":  {"BTC": 0.35, "GOLD": -0.25, "WTI": 0.3, "SPY": 0.88, "QQQ": 1.0, "TREASURY_10Y": -0.05, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.3, "DEX_VOLUME": 0.25, "FEAR_GREED": 0.5},
+        "TREASURY_10Y": {"BTC": -0.05, "GOLD": 0.25, "WTI": -0.05, "SPY": 0.0, "QQQ": -0.05, "TREASURY_10Y": 1.0, "TIPS_10Y": 0.82, "TIPS_5Y": 0.72, "TIPS_20Y": 0.87, "TIPS_30Y": 0.82, "ETH_VOLUME": -0.1, "DEX_VOLUME": -0.05, "FEAR_GREED": 0.1},
+        "TIPS_10Y": {"BTC": -0.1, "GOLD": 0.3, "WTI": 0.0, "SPY": -0.05, "QQQ": -0.1, "TREASURY_10Y": 0.82, "TIPS_10Y": 1.0, "TIPS_5Y": 0.88, "TIPS_20Y": 0.92, "TIPS_30Y": 0.88, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": 0.05},
+        "TIPS_5Y": {"BTC": -0.05, "GOLD": 0.25, "WTI": 0.05, "SPY": 0.0, "QQQ": -0.05, "TREASURY_10Y": 0.72, "TIPS_10Y": 0.88, "TIPS_5Y": 1.0, "TIPS_20Y": 0.82, "TIPS_30Y": 0.77, "ETH_VOLUME": -0.1, "DEX_VOLUME": -0.05, "FEAR_GREED": 0.1},
+        "TIPS_20Y": {"BTC": -0.1, "GOLD": 0.3, "WTI": -0.05, "SPY": -0.05, "QQQ": -0.1, "TREASURY_10Y": 0.87, "TIPS_10Y": 0.92, "TIPS_5Y": 0.82, "TIPS_20Y": 1.0, "TIPS_30Y": 0.92, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": 0.05},
+        "TIPS_30Y": {"BTC": -0.1, "GOLD": 0.3, "WTI": 0.0, "SPY": -0.05, "QQQ": -0.1, "TREASURY_10Y": 0.82, "TIPS_10Y": 0.88, "TIPS_5Y": 0.77, "TIPS_20Y": 0.92, "TIPS_30Y": 1.0, "ETH_VOLUME": -0.15, "DEX_VOLUME": -0.1, "FEAR_GREED": 0.05},
+        "ETH_VOLUME": {"BTC": 0.75, "GOLD": -0.05, "WTI": 0.15, "SPY": 0.25, "QQQ": 0.3, "TREASURY_10Y": -0.1, "TIPS_10Y": -0.15, "TIPS_5Y": -0.1, "TIPS_20Y": -0.15, "TIPS_30Y": -0.15, "ETH_VOLUME": 1.0, "DEX_VOLUME": 0.8, "FEAR_GREED": 0.45},
+        "DEX_VOLUME": {"BTC": 0.7, "GOLD": 0.0, "WTI": 0.1, "SPY": 0.2, "QQQ": 0.25, "TREASURY_10Y": -0.05, "TIPS_10Y": -0.1, "TIPS_5Y": -0.05, "TIPS_20Y": -0.1, "TIPS_30Y": -0.1, "ETH_VOLUME": 0.8, "DEX_VOLUME": 1.0, "FEAR_GREED": 0.4},
+        "FEAR_GREED": {"BTC": 0.4, "GOLD": -0.15, "WTI": 0.25, "SPY": 0.45, "QQQ": 0.5, "TREASURY_10Y": 0.1, "TIPS_10Y": 0.05, "TIPS_5Y": 0.1, "TIPS_20Y": 0.05, "TIPS_30Y": 0.05, "ETH_VOLUME": 0.45, "DEX_VOLUME": 0.4, "FEAR_GREED": 1.0}
     }
 }
 
@@ -145,4 +243,4 @@ if __name__ == "__main__":
     # Example usage
     print("\nExample correlations:")
     print(f"BTC-SPY in HIGH_VOL_DOWN: {get_regime_correlation('HIGH_VOL_DOWN', 'BTC', 'SPY')}")
-    print(f"GOLD-TIPS in STABLE_VOL_UP: {get_regime_correlation('STABLE_VOL_UP', 'GOLD', 'TIPS')}")
+    print(f"GOLD-TIPS in STABLE_VOL_UP: {get_regime_correlation('STABLE_VOL_UP', 'GOLD', 'TIPS_10Y')}")
